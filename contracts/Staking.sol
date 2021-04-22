@@ -206,7 +206,11 @@ contract Staking is IAdmin, IStaking, IWorker {
      * Emits a {Transfer} event.
      */
     function transfer(address recipient, uint256 amount) external onlyEnabled returns (bool) {
-        // TODO
+        require(users_list.contains(msg.sender), "You haven't deposited money");
+        require(users[msg.sender].balance >= amount, "You balance is less than value");
+        users[recipient].balance += amount;
+        users[msg.sender].balance -= amount;
+        emit Transfer(msg.sender, recipient, amount);
     }
 
     // Worker
