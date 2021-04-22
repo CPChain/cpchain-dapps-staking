@@ -30,7 +30,7 @@ interface IStaking {
      * If the user's withdrawn account has money, he can't deposit.
      * Emits a {Deposit} event.
      */
-    function deposit(uint256 amount) external;
+    function deposit() payable external;
 
     /**
      * User withdraw money. The system select a worker and emit a Event to notify it.

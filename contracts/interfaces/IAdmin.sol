@@ -73,6 +73,11 @@ interface IAdmin {
     function setTxLowerLimit(uint256 limit) external;
 
     /**
+     * Set the upper limit when withdraw
+     */
+    function setWithdrawnUpperLimit(uint256 limit) external;
+
+    /**
      * Change the owner of the contract. If the address is a contract, the contract should be IAdmin.
      */
     function changeOwner(address owner) external;

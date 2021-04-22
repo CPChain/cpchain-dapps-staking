@@ -21,6 +21,18 @@ contract Staking is IAdmin, IStaking, IWorker {
     }
 
     mapping(address=>Worker) internal workers;
+    Set.Data private workers_list; // for iterations.
+
+    // users
+    struct User {
+        uint256 balance;
+        uint256 withdrawnBalance; // If the withdrawn-balance not empty, you can't withdraw.
+        uint256 appealedBalance; // If the appeal-balane not empty, you can't withdraw.
+        uint256 lastWithdrawnHeight; // When you submit a appeal, your height should greater than the lastWithdrawnHeight.
+    }
+
+    mapping(address=>User) internal users;
+    Set.Data private users_list; // for iterations.
 
     // paramaeters
     uint256 withdraw_fee_numerator = 0; // fee of withdraw
@@ -29,10 +41,12 @@ contract Staking is IAdmin, IStaking, IWorker {
     uint256 user_balance_limit = 10000 ether; // The upper limit per users
     uint256 tx_upper_limit = 10000 ether; // The upper limit per tx
     uint256 tx_lower_limit = 1 ether; // The lower limit per tx
+    uint256 withdraw_upper_limit = 10000 ether; // The upper limit when withdraw
     bool allowOwnerBeContract = false; // If allow the owner be a contract
 
     modifier onlyOwner() {require(msg.sender == owner);_;}
     modifier onlyEnabled() {require(enabled);_;}
+    modifier haveWorkers() {require(workers_list.getAll().length > 0, "There are not workers now");_;}
 
     constructor () public {
         owner = msg.sender;
@@ -54,7 +68,116 @@ contract Staking is IAdmin, IStaking, IWorker {
         return size > 0;
     }
 
+    // User
+    /**
+     * User deposit money to the system, system select a worker then send the money to it.
+     * Then record the amount to the user's account.
+     * If the user's withdrawn account has money, he can't deposit.
+     * Emits a {Deposit} event.
+     */
+    function deposit() payable external onlyEnabled haveWorkers {
+        require(msg.value >= tx_lower_limit, "Amount less than the lower limit");
+        require(msg.value <= tx_upper_limit, "Amount greater than the upper limit");
+        if(users_list.contains(msg.sender)) {
+            // check the upper limit
+            uint256 balance = users[msg.sender].balance + msg.value;
+            require(balance <= user_balance_limit, "User's balance greater than the upper limit");
+        } else {
+            users[msg.sender].balance = 0;
+            users_list.insert(msg.sender);
+        }
+        // select worker, find the minest account
+        address[] memory items = workers_list.getAll();
+        address selected = items[0];
+        for(uint i = 1; i < items.length; i++) {
+            if (workers[items[i]].balance < workers[selected].balance) {
+                selected = items[i];
+            }
+        }
+        // check upper limit of the worker
+        require((workers[selected].balance + msg.value) < worker_balance_limit, "Amount greater than worker's upper limit");
+
+        // transfer
+        selected.transfer(msg.value);
+        
+        // worker balance
+        workers[selected].balance = workers[selected].balance.add(msg.value);
+
+        // user balance
+        users[msg.sender].balance = users[msg.sender].balance.add(msg.value);
+
+        // emit event
+        emit Deposit(msg.sender, selected, msg.value);
+    }
+
+    /**
+     * User withdraw money. The system select a worker and emit a Event to notify it.
+     * Move the withdrawn money to the withdrawn account, wait until the worker refund.
+     * If the user's appeal account has money, he can't withdraw.
+     * Emits a {Withdraw} event.
+     */
+    function withdraw(uint256 amount) external onlyEnabled haveWorkers {
+        require(amount <= withdraw_upper_limit, "Amount greater than the upper limit");
+        require(users_list.contains(msg.sender), "You did't deposit money.");
+        require(amount < users[msg.sender].balance, "Amount greater than deposited money");
+        require(users[msg.sender].withdrawnBalance == 0, "You have a unhandled withdrawn transaction");
+        require(users[msg.sender].appealedBalance == 0, "You have a unhandled appealed transaction");
+        // select worker
+        address[] memory items = workers_list.getAll();
+        address selected = items[0];
+        for(uint i = 1; i < items.length; i++) {
+            if (workers[items[i]].balance > workers[selected].balance) {
+                selected = items[i];
+            }
+        }
+
+        // transfer the balance to the withdrawn balance
+        users[msg.sender].balance -= amount;
+        users[msg.sender].withdrawnBalance = amount;
+        users[msg.sender].lastWithdrawnHeight = block.number;
+
+        // emit event
+        emit Withdraw(msg.sender, selected, amount, block.number);
+    }
+
+    /**
+     * When the user's withdrawn account has money, 
+     * and the block height minus withdrawn height greater than 6, 
+     * the user can submit an appeal.
+     * Emits an {Appeal} event.
+     */
+    function appeal() external onlyEnabled;
+
+    /**
+     * Returns the amount of balance owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * Returns the amount of withdrawn balance owned by `account`.
+     */
+    function getWithdrawnBalance(address account) external view returns (uint256);
+
+    /**
+     * Returns the amount of appealed balance owned by `account`.
+     */
+    function getAppealedBalance(address account) external view returns (uint256);
+
+    /**
+     * Returns the amount of interest owned by `account`.
+     */
+    function getInterest(address account) external view returns (uint256);
+
+    /**
+     * Moves `amount` tokens from the caller's account to `recipient`.
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external onlyEnabled returns (bool);
+
     // Admin
+
     /**
      * Add new worker to the system.
      * Returns a boolean value indicating whether the operation succeeded.
@@ -63,6 +186,7 @@ contract Staking is IAdmin, IStaking, IWorker {
     function addWorker(address account) external onlyOwner onlyEnabled {
         require(!workers[account].existed, "The worker has already existed!");
         workers[account] = Worker({balance: 0, existed: true});
+        workers_list.insert(account);
         emit AddWorker(account);
     }
     
@@ -74,6 +198,7 @@ contract Staking is IAdmin, IStaking, IWorker {
     function removeWorker(address account) external onlyOwner onlyEnabled {
         require(workers[account].existed, "The worker not existed!");
         delete workers[account];
+        workers_list.remove(account);
         emit RemoveWorker(account);
     }
 
@@ -99,6 +224,14 @@ contract Staking is IAdmin, IStaking, IWorker {
     function setWithdrawFee(uint256 fee) external onlyOwner onlyEnabled {
         require(fee <= 100, "The fee should greater than 0 and less than 100 (0 - 1%)");
         withdraw_fee_numerator = fee;
+    }
+
+    /**
+     * Set the upper limit when withdraw
+     */
+    function setWithdrawnUpperLimit(uint256 limit) external onlyOwner onlyEnabled {
+        require(limit >= 1 ether, "The upper limit should be greater than 1 CPC");
+        withdraw_upper_limit = limit;
     }
 
     /**
