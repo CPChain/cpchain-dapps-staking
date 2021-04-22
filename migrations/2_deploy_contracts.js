@@ -1,5 +1,5 @@
-var Greeter = artifacts.require("./Greeter.sol");
+var Staking = artifacts.require("./Staking.sol");
 
 module.exports = function(deployer) {
-     deployer.deploy(Greeter, "Hello, World!"); //"参数在第二个变量携带"
+     deployer.deploy(Staking); //"参数在第二个变量携带"
 };

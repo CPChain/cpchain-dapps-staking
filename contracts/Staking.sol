@@ -37,14 +37,14 @@ contract Staking is IAdmin, IStaking, IWorker {
     Set.Data private users_list; // for iterations.
 
     // paramaeters
-    uint256 withdraw_fee_numerator = 0; // fee of withdraw
-    uint256 withdraw_fee_denominator = 10000; // true_fee = value * withdraw_fee_numerator / withdraw_fee_denominator
-    uint256 worker_balance_limit = 1000000 ether; // The upper limit for worker balance
-    uint256 user_balance_limit = 10000 ether; // The upper limit per users
-    uint256 tx_upper_limit = 10000 ether; // The upper limit per tx
-    uint256 tx_lower_limit = 1 ether; // The lower limit per tx
-    uint256 withdraw_upper_limit = 10000 ether; // The upper limit when withdraw
-    bool allowOwnerBeContract = false; // If allow the owner be a contract
+    uint256 public withdraw_fee_numerator = 0; // fee of withdraw
+    uint256 public withdraw_fee_denominator = 10000; // true_fee = value * withdraw_fee_numerator / withdraw_fee_denominator
+    uint256 public worker_balance_limit = 1000000 ether; // The upper limit for worker balance
+    uint256 public user_balance_limit = 10000 ether; // The upper limit per users
+    uint256 public tx_upper_limit = 10000 ether; // The upper limit per tx
+    uint256 public tx_lower_limit = 1 ether; // The lower limit per tx
+    uint256 public withdraw_upper_limit = 10000 ether; // The upper limit when withdraw
+    bool public allowOwnerBeContract = false; // If allow the owner be a contract
 
     // stats
     uint256 public total_balance = 0;
@@ -283,6 +283,7 @@ contract Staking is IAdmin, IStaking, IWorker {
             uint256 interest = all_interest * users[items[i]].balance / total_balance;
             users[items[i]].balance += interest;
             users[items[i]].interest += interest;
+            total_balance += interest;
         }
         emit StatsInterest(all_interest, total_balance, items.length, block.number);
     }
