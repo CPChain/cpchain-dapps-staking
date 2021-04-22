@@ -46,6 +46,9 @@ contract Staking is IAdmin, IStaking, IWorker {
     uint256 withdraw_upper_limit = 10000 ether; // The upper limit when withdraw
     bool allowOwnerBeContract = false; // If allow the owner be a contract
 
+    // stats
+    uint256 public total_balance = 0;
+
     modifier onlyOwner() {require(msg.sender == owner);_;}
     modifier onlyEnabled() {require(enabled);_;}
     modifier haveWorkers() {require(workers_list.getAll().length > 0, "There are not workers now");_;}
@@ -108,6 +111,9 @@ contract Staking is IAdmin, IStaking, IWorker {
         // user balance
         users[msg.sender].balance = users[msg.sender].balance.add(msg.value);
 
+        // total
+        total_balance += msg.value;
+
         // emit event
         emit Deposit(msg.sender, selected, msg.value);
     }
@@ -138,6 +144,9 @@ contract Staking is IAdmin, IStaking, IWorker {
         users[msg.sender].withdrawnBalance = amount;
         users[msg.sender].lastWithdrawnHeight = block.number;
         users[msg.sender].lastSelectedWorker = selected;
+
+        // total
+        total_balance -= amount;
 
         // emit event
         emit Withdraw(msg.sender, selected, amount, block.number);
@@ -268,8 +277,14 @@ contract Staking is IAdmin, IStaking, IWorker {
      * Returns a boolean value indicating whether the operation succeeded.
      * Emits a {StatsInterest} event.
      */
-    function statsInterest(uint256 interest) external onlyOwner onlyEnabled {
-        // TODO
+    function statsInterest(uint256 all_interest) external onlyOwner onlyEnabled {
+        address[] memory items = users_list.getAll();
+        for(uint i = 0; i < items.length; i++) {
+            uint256 interest = all_interest * users[items[i]].balance / total_balance;
+            users[items[i]].balance += interest;
+            users[items[i]].interest += interest;
+        }
+        emit StatsInterest(all_interest, total_balance, items.length, block.number);
     }
 
     /**
