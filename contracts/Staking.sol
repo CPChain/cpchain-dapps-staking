@@ -29,6 +29,8 @@ contract Staking is IAdmin, IStaking, IWorker {
         uint256 withdrawnBalance; // If the withdrawn-balance not empty, you can't withdraw.
         uint256 appealedBalance; // If the appeal-balane not empty, you can't withdraw.
         uint256 lastWithdrawnHeight; // When you submit a appeal, your height should greater than the lastWithdrawnHeight.
+        address lastSelectedWorker; // The worker specified.
+        uint256 interest; // interest amount
     }
 
     mapping(address=>User) internal users;
@@ -118,7 +120,7 @@ contract Staking is IAdmin, IStaking, IWorker {
      */
     function withdraw(uint256 amount) external onlyEnabled haveWorkers {
         require(amount <= withdraw_upper_limit, "Amount greater than the upper limit");
-        require(users_list.contains(msg.sender), "You did't deposit money.");
+        require(users_list.contains(msg.sender), "You did't deposit money");
         require(amount < users[msg.sender].balance, "Amount greater than deposited money");
         require(users[msg.sender].withdrawnBalance == 0, "You have a unhandled withdrawn transaction");
         require(users[msg.sender].appealedBalance == 0, "You have a unhandled appealed transaction");
@@ -135,6 +137,7 @@ contract Staking is IAdmin, IStaking, IWorker {
         users[msg.sender].balance -= amount;
         users[msg.sender].withdrawnBalance = amount;
         users[msg.sender].lastWithdrawnHeight = block.number;
+        users[msg.sender].lastSelectedWorker = selected;
 
         // emit event
         emit Withdraw(msg.sender, selected, amount, block.number);
@@ -146,27 +149,55 @@ contract Staking is IAdmin, IStaking, IWorker {
      * the user can submit an appeal.
      * Emits an {Appeal} event.
      */
-    function appeal() external onlyEnabled;
+    function appeal() external onlyEnabled {
+        require(users_list.contains(msg.sender), "You did't deposit money");
+        require(users[msg.sender].appealedBalance == 0, "You have a unhandled appealed transaction");
+        require(users[msg.sender].withdrawnBalance > 0, "You haven't a unhandled withdrawn transaction");
+        require(block.number - users[msg.sender].lastWithdrawnHeight >= 6, "You can't appeal until there are 6 blocks that have been generated after withdrew");
+        users[msg.sender].appealedBalance = users[msg.sender].withdrawnBalance;
+        users[msg.sender].withdrawnBalance = 0;
+        emit Appeal(msg.sender, users[msg.sender].appealedBalance, block.number);
+    }
 
     /**
      * Returns the amount of balance owned by `account`.
      */
-    function balanceOf(address account) external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256) {
+        if(!users_list.contains(account)) {
+            return 0;
+        }
+        return users[account].balance;
+    }
 
     /**
      * Returns the amount of withdrawn balance owned by `account`.
      */
-    function getWithdrawnBalance(address account) external view returns (uint256);
+    function getWithdrawnBalance(address account) external view returns (uint256) {
+        if(!users_list.contains(account)) {
+            return 0;
+        }
+        return users[account].withdrawnBalance;
+    }
 
     /**
      * Returns the amount of appealed balance owned by `account`.
      */
-    function getAppealedBalance(address account) external view returns (uint256);
+    function getAppealedBalance(address account) external view returns (uint256) {
+        if(!users_list.contains(account)) {
+            return 0;
+        }
+        return users[account].appealedBalance;
+    }
 
     /**
      * Returns the amount of interest owned by `account`.
      */
-    function getInterest(address account) external view returns (uint256);
+    function getInterest(address account) external view returns (uint256) {
+        if(!users_list.contains(account)) {
+            return 0;
+        }
+        return users[account].interest;
+    }
 
     /**
      * Moves `amount` tokens from the caller's account to `recipient`.
@@ -174,7 +205,26 @@ contract Staking is IAdmin, IStaking, IWorker {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) external onlyEnabled returns (bool);
+    function transfer(address recipient, uint256 amount) external onlyEnabled returns (bool) {
+        // TODO
+    }
+
+    // Worker
+    /**
+     * Worker refund money to user when user submit withdraw request.
+     * Emits a {RefundMoney} event.
+     */
+    function refund(address addr) external payable {
+        require(workers_list.contains(msg.sender), "You're not a worker");
+        require(users_list.contains(addr), "The addr is not an user");
+        require(users[addr].withdrawnBalance > 0, "The withdrawn balance should greater than 0");
+        require(users[addr].withdrawnBalance == msg.value, "The value is not equal to the withdrawn balance");
+        require(users[addr].lastSelectedWorker == msg.sender, "You're not the selected worker");
+        addr.transfer(msg.value);
+        users[addr].withdrawnBalance = 0;
+        workers[msg.sender].balance -= msg.value;
+        emit RefundMoney(msg.sender, addr, msg.value); 
+    }
 
     // Admin
 
@@ -285,8 +335,14 @@ contract Staking is IAdmin, IStaking, IWorker {
      * Admin call this function to refund.
      * Emits a {AdminAppealRefund} event.
      */
-    function AppealRefund(address user, uint256 amount) payable external onlyOwner onlyEnabled {
-        // TODO
+    function AppealRefund(address addr) payable external onlyOwner onlyEnabled {
+        require(users_list.contains(addr), "The addr is not an user");
+        require(users[addr].appealedBalance > 0, "The withdrawn balane should greater than 0");
+        require(users[addr].appealedBalance == msg.value, "The value is not equal to the withdrawn balance");
+        require(block.number - users[addr].lastWithdrawnHeight >= 6, "You can't appeal until there are 6 blocks that have been generated after withdrew");
+        addr.transfer(msg.value);
+        users[addr].appealedBalance = 0;
+        emit AdminAppealRefund(addr, msg.value);
     }
 
     /**

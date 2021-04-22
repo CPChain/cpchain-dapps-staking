@@ -10,5 +10,5 @@ interface IWorker {
      * Worker refund money to user when user submit withdraw request.
      * Emits a {RefundMoney} event.
      */
-    function refund(address addr, uint256 amount) external;
+    function refund(address addr) external payable;
 }
