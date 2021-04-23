@@ -236,6 +236,7 @@ contract Staking is IAdmin, IStaking, IWorker {
         addr.transfer(msg.value);
         users[addr].withdrawnBalance = 0;
         workers[msg.sender].balance -= msg.value;
+        // TODO 给 worker 相应的手续费
         emit RefundMoney(msg.sender, addr, msg.value); 
     }
 
@@ -362,6 +363,7 @@ contract Staking is IAdmin, IStaking, IWorker {
         require(block.number - users[addr].lastWithdrawnHeight >= 6, "You can't appeal until there are 6 blocks that have been generated after withdrew");
         addr.transfer(msg.value);
         users[addr].appealedBalance = 0;
+        // TODO 给 admin 相应的手续费
         emit AdminAppealRefund(addr, msg.value);
     }
 
