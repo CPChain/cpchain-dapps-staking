@@ -223,4 +223,55 @@ contract("Staking", (accounts) => {
       "The tx_lower_limit should be 1200000 CPC"
     );
   });
+  it("change owner", async ()=> {
+    const instance = await Staking.deployed();
+    // change first
+    await instance.changeOwner(accounts[1])
+    // Account[0] can't change the owner now
+    try {
+      await instance.changeOwner(accounts[1])
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("You're not the owner of this contract"))
+    }
+    // Use account[1] change the owner to accounts[2]
+    await instance.changeOwner(accounts[2], {from: accounts[1]})
+    try {
+      await instance.changeOwner(accounts[3], {from: accounts[1]})
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("You're not the owner of this contract"))
+    }
+    // change back
+    await instance.changeOwner(accounts[0], {from: accounts[2]})
+  })
+  it("test allowContract", async () => {
+    const instance = await Staking.deployed();
+    const test_contract = instance.address;
+    
+    // change the owner to contract
+    assert.equal(
+      await instance.isContract(test_contract),
+      true,
+      "The address should be contract"
+    )
+    try {
+      await instance.changeOwner(test_contract)
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("Don't allow contract be the owner"))
+    }
+
+    // update the parameter
+    await instance.setAllowOwnerBeContract(true)
+    // you can set the owner to a contract
+    await instance.changeOwner(test_contract)
+    // update the parameter
+    try {
+      await instance.setAllowOwnerBeContract(false)
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("You're not the owner of this contract"))
+    }
+  })
 });
