@@ -274,6 +274,21 @@ contract Staking is IAdmin, IStaking, IWorker {
     }
 
     /**
+     * Count of all workers
+     */
+    function workersCnt() external view returns (uint) {
+        return workers_list.getAll().length;
+    }
+
+    /**
+     * Returns the amount of balance owned by `account`.
+     */
+    function workerBalanceOf(address account) external view returns (uint256) {
+        require(workers_list.contains(account), "Can't find this account");
+        return workers[account].balance;
+    }
+
+    /**
      * Stats the interest that all workers earned yesterday and distributed by the ratio of balance of all addresses.
      * Returns a boolean value indicating whether the operation succeeded.
      * Emits a {StatsInterest} event.

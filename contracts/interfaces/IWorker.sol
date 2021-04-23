@@ -11,4 +11,9 @@ interface IWorker {
      * Emits a {RefundMoney} event.
      */
     function refund(address addr) external payable;
+
+    /**
+     * Returns the amount of balance owned by `account`.
+     */
+    function workerBalanceOf(address account) external view returns (uint256);
 }

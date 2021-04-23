@@ -41,6 +41,11 @@ interface IAdmin {
     function isWorker(address account) external view returns (bool);
 
     /**
+     * Count of all workers
+     */
+    function workersCnt() external view returns (uint);
+
+    /**
      * Stats the interest that all workers earned yesterday and distributed by the ratio of balance of all addresses.
      * Returns a boolean value indicating whether the operation succeeded.
      * Emits a {StatsInterest} event.

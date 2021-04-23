@@ -30,3 +30,22 @@ UnitTest list
 |22|设置 tx_lower_limit 为 100000 CPC | Success|Done|
 |23|设置 allowOwnerBeContract 为 true，可将 Owner 更改为 Contract address| Success|Done|
 |24|设置 allowOwnerBeContract 为 false，将 Owner 更改为 Contract address| Fail|Done|
+
+## Worker Manager
+
+|#|Name|Done|
+|-|----|---|
+|1|增加一个 Worker，检查其是否存在，Balance 是否为 0，检查 Worker 总数，检查是否产生了 AddWorker 事件|Done
+|2|增加一个 重复 Worker，检查其是否存在，Balance 是否为 0，检查 Worker 总数|Done
+|3|批量增加 10 个 Worker，检查 10 个是否都存在，检查 Worker 总数|Done
+|4|增加一个 Worker，随即删除，检查其是否存在，检查 Worker 总数，检查是否产生了 RemoveWorker 事件|Done
+|5|批量增加 10 个 Worker，随即删除 5 个，随后检查其是否存在，检查 Worker 总数|Done
+|6|删除一个不存在的 Worker|Done
+
+## Deposit and Withdraw
+
+## Appeal and Refund
+
+## Interest Stats
+
+## Transfer
