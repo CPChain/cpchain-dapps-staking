@@ -40,10 +40,10 @@ contract Staking is IAdmin, IStaking, IWorker {
     uint256 public withdraw_fee_numerator = 0; // fee of withdraw
     uint256 public withdraw_fee_denominator = 10000; // true_fee = value * withdraw_fee_numerator / withdraw_fee_denominator
     uint256 public worker_balance_limit = 1000000 ether; // The upper limit for worker balance
-    uint256 public user_balance_limit = 10000 ether; // The upper limit per users
-    uint256 public tx_upper_limit = 10000 ether; // The upper limit per tx
+    uint256 public user_balance_limit = 300000 ether; // The upper limit per users
+    uint256 public tx_upper_limit = 20000 ether; // The upper limit per tx
     uint256 public tx_lower_limit = 1 ether; // The lower limit per tx
-    uint256 public withdraw_upper_limit = 10000 ether; // The upper limit when withdraw
+    uint256 public withdraw_upper_limit = 20000 ether; // The upper limit when withdraw
     bool public allowOwnerBeContract = false; // If allow the owner be a contract
 
     // stats
@@ -125,9 +125,10 @@ contract Staking is IAdmin, IStaking, IWorker {
      * Emits a {Withdraw} event.
      */
     function withdraw(uint256 amount) external onlyEnabled haveWorkers {
+        require(amount >= 1 ether, "Amount need to greater than or equal to 1 CPC");
         require(amount <= withdraw_upper_limit, "Amount greater than the upper limit");
         require(users_list.contains(msg.sender), "You did't deposit money");
-        require(amount < users[msg.sender].balance, "Amount greater than deposited money");
+        require(amount <= users[msg.sender].balance, "Amount greater than deposited money");
         require(users[msg.sender].withdrawnBalance == 0, "You have a unhandled withdrawn transaction");
         require(users[msg.sender].appealedBalance == 0, "You have a unhandled appealed transaction");
         // select worker
