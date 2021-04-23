@@ -13,7 +13,7 @@ UnitTest list
 |5|设置 withdraw_fee_numerator 为 10001|Fail|Done|
 |6|设置 withdraw_fee_numerator 为 101|Fail|Done|
 |7|设置 worker_balance_limit 为 0| Fail
-|8|设置 worker_balance_limit 为 0.1| Fail
+|8|设置 worker_balance_limit 为 0.1 CPC| Fail
 |9|设置 worker_balance_limit 为 1 CPC| Success
 |10|设置 worker_balance_limit 为 1200000 CPC| Success
 |11|设置 user_balance_limit 为 0 | Fail

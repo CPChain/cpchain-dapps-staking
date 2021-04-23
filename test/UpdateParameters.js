@@ -1,4 +1,5 @@
 const Staking = artifacts.require("Staking");
+const Web3 = require('web3');
 
 contract("Staking", (accounts) => {
   it('Set withdraw_fee_numerator to 0', async () => {
@@ -54,5 +55,43 @@ contract("Staking", (accounts) => {
     } catch(error) {
       assert.ok(error.toString().includes("The fee should greater than 0 and less than 100 (0 - 1%)"))
     }
+  });
+  it('Set worker_balance_limit to 0', async () => {
+    const instance = await Staking.deployed();
+    try {
+      await instance.setWorkerBalanceLimit(0)
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("The upper limit should greater than 1 CPC"))
+    }
+  });
+  it('Set worker_balance_limit to 0.1 CPC', async () => {
+    const instance = await Staking.deployed();
+    try {
+      await instance.setWorkerBalanceLimit(Web3.utils.toWei('0.1', 'ether'))
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("The upper limit should greater than 1 CPC"))
+    }
+  });
+  it('Set worker_balance_limit to 1 CPC', async () => {
+    const instance = await Staking.deployed();
+    let limit = Web3.utils.toWei('1', 'ether')
+    await instance.setWorkerBalanceLimit(limit)
+    assert.equal(
+      await instance.worker_balance_limit(),
+      limit,
+      "The worker_balance_limit should be 1 CPC"
+    );
+  });
+  it('Set worker_balance_limit to 1200000 CPC', async () => {
+    const instance = await Staking.deployed();
+    let limit = Web3.utils.toWei('1200000', 'ether')
+    await instance.setWorkerBalanceLimit(limit)
+    assert.equal(
+      await instance.worker_balance_limit(),
+      limit,
+      "The worker_balance_limit should be 1200000 CPC"
+    );
   });
 });
