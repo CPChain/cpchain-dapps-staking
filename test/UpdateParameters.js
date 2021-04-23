@@ -2,6 +2,16 @@ const Staking = artifacts.require("Staking");
 const Web3 = require('web3');
 
 contract("Staking", (accounts) => {
+  async function testOnlyOwner(func, args) {
+    try {
+      args.push({"from": accounts[1]})
+      await func.apply(this, args)
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("You're not the owner of this contract"))
+    }
+  }
+
   it('Set withdraw_fee_numerator to 0', async () => {
     const instance = await Staking.deployed();
     await instance.setWithdrawFee(0)
@@ -10,6 +20,7 @@ contract("Staking", (accounts) => {
       0,
       "The withdraw_fee_numerator should be zero"
     );
+    await testOnlyOwner(instance.setWithdrawFee, [0])
   });
   it('Set withdraw_fee_numerator to 50', async () => {
     const instance = await Staking.deployed();
@@ -64,6 +75,7 @@ contract("Staking", (accounts) => {
     } catch(error) {
       assert.ok(error.toString().includes("The upper limit should greater than 1 CPC"))
     }
+    await testOnlyOwner(instance.setWorkerBalanceLimit, [0])
   });
   it('Set worker_balance_limit to 0.1 CPC', async () => {
     const instance = await Staking.deployed();
@@ -102,6 +114,7 @@ contract("Staking", (accounts) => {
     } catch(error) {
       assert.ok(error.toString().includes("The upper limit should greater than 1 CPC"))
     }
+    await testOnlyOwner(instance.setUserBalanceLimit, [0])
   });
   it('Set user_balance_limit to 0.1 CPC', async () => {
     const instance = await Staking.deployed();
@@ -140,6 +153,7 @@ contract("Staking", (accounts) => {
     } catch(error) {
       assert.ok(error.toString().includes("The upper limit should greater than 1 CPC"))
     }
+    await testOnlyOwner(instance.setTxUpperLimit, [0])
   });
   it('Set tx_upper_limit to 0.1 CPC', async () => {
     const instance = await Staking.deployed();
@@ -178,6 +192,7 @@ contract("Staking", (accounts) => {
     } catch(error) {
       assert.ok(error.toString().includes("The lower limit should greater than 1 CPC"))
     }
+    await testOnlyOwner(instance.setTxLowerLimit, [0])
   });
   it('Set tx_lower_limit to 0.1 CPC', async () => {
     const instance = await Staking.deployed();

@@ -49,7 +49,7 @@ contract Staking is IAdmin, IStaking, IWorker {
     // stats
     uint256 public total_balance = 0;
 
-    modifier onlyOwner() {require(msg.sender == owner);_;}
+    modifier onlyOwner() {require(msg.sender == owner, "You're not the owner of this contract");_;}
     modifier onlyEnabled() {require(enabled);_;}
     modifier haveWorkers() {require(workers_list.getAll().length > 0, "There are not workers now");_;}
 
