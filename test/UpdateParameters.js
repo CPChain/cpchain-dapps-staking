@@ -94,4 +94,118 @@ contract("Staking", (accounts) => {
       "The worker_balance_limit should be 1200000 CPC"
     );
   });
+  it('Set user_balance_limit to 0', async () => {
+    const instance = await Staking.deployed();
+    try {
+      await instance.setUserBalanceLimit(0)
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("The upper limit should greater than 1 CPC"))
+    }
+  });
+  it('Set user_balance_limit to 0.1 CPC', async () => {
+    const instance = await Staking.deployed();
+    try {
+      await instance.setUserBalanceLimit(Web3.utils.toWei('0.1', 'ether'))
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("The upper limit should greater than 1 CPC"))
+    }
+  });
+  it('Set user_balance_limit to 1 CPC', async () => {
+    const instance = await Staking.deployed();
+    let limit = Web3.utils.toWei('1', 'ether')
+    await instance.setUserBalanceLimit(limit)
+    assert.equal(
+      await instance.user_balance_limit(),
+      limit,
+      "The user_balance_limit should be 1 CPC"
+    );
+  });
+  it('Set user_balance_limit to 100000 CPC', async () => {
+    const instance = await Staking.deployed();
+    let limit = Web3.utils.toWei('100000', 'ether')
+    await instance.setUserBalanceLimit(limit)
+    assert.equal(
+      await instance.user_balance_limit(),
+      limit,
+      "The user_balance_limit should be 100000 CPC"
+    );
+  });
+  it('Set tx_upper_limit to 0', async () => {
+    const instance = await Staking.deployed();
+    try {
+      await instance.setTxUpperLimit(0)
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("The upper limit should greater than 1 CPC"))
+    }
+  });
+  it('Set tx_upper_limit to 0.1 CPC', async () => {
+    const instance = await Staking.deployed();
+    try {
+      await instance.setTxUpperLimit(Web3.utils.toWei('0.1', 'ether'))
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("The upper limit should greater than 1 CPC"))
+    }
+  });
+  it('Set tx_upper_limit to 1 CPC', async () => {
+    const instance = await Staking.deployed();
+    let limit = Web3.utils.toWei('1', 'ether')
+    await instance.setTxUpperLimit(limit)
+    assert.equal(
+      await instance.tx_upper_limit(),
+      limit,
+      "The tx_upper_limit should be 1 CPC"
+    );
+  });
+  it('Set tx_upper_limit to 1200000 CPC', async () => {
+    const instance = await Staking.deployed();
+    let limit = Web3.utils.toWei('1200000', 'ether')
+    await instance.setTxUpperLimit(limit)
+    assert.equal(
+      await instance.tx_upper_limit(),
+      limit,
+      "The tx_upper_limit should be 1200000 CPC"
+    );
+  });
+  it('Set tx_lower_limit to 0', async () => {
+    const instance = await Staking.deployed();
+    try {
+      await instance.setTxLowerLimit(0)
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("The lower limit should greater than 1 CPC"))
+    }
+  });
+  it('Set tx_lower_limit to 0.1 CPC', async () => {
+    const instance = await Staking.deployed();
+    try {
+      await instance.setTxLowerLimit(Web3.utils.toWei('0.1', 'ether'))
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("The lower limit should greater than 1 CPC"))
+    }
+  });
+  it('Set tx_lower_limit to 1 CPC', async () => {
+    const instance = await Staking.deployed();
+    let limit = Web3.utils.toWei('1', 'ether')
+    await instance.setTxLowerLimit(limit)
+    assert.equal(
+      await instance.tx_lower_limit(),
+      limit,
+      "The tx_lower_limit should be 1 CPC"
+    );
+  });
+  it('Set tx_lower_limit to 1200000 CPC', async () => {
+    const instance = await Staking.deployed();
+    let limit = Web3.utils.toWei('1200000', 'ether')
+    await instance.setTxLowerLimit(limit)
+    assert.equal(
+      await instance.tx_lower_limit(),
+      limit,
+      "The tx_lower_limit should be 1200000 CPC"
+    );
+  });
 });
