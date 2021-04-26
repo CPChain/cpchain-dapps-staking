@@ -6,4 +6,6 @@
 
 truffle test
 
+truffle run coverage
+
 ```

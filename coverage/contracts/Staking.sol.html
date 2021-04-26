@@ -1,0 +1,1244 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/Staking.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> Staking.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">43.22% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>51/118</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">38.04% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>35/92</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">59.38% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>19/32</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">42.74% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>50/117</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">25×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">pragma solidity ^0.4.24;
+&nbsp;
+import "./lib/safeMath.sol";
+import "./lib/set.sol";
+&nbsp;
+import "./interfaces/IAdmin.sol";
+import "./interfaces/IStaking.sol";
+import "./interfaces/IWorker.sol";
+&nbsp;
+contract Staking is IAdmin, IStaking, IWorker {
+    using Set for Set.Data;
+    using SafeMath for uint256;
+&nbsp;
+    address owner; // owner has permissions to modify parameters
+    bool public enabled = true; // if upgrade contract, then the old contract should be disabled
+&nbsp;
+    // workers
+    struct Worker {
+        uint256 balance;
+        bool existed;
+    }
+&nbsp;
+    mapping(address=&gt;Worker) internal workers;
+    Set.Data private workers_list; // for iterations.
+&nbsp;
+    // users
+    struct User {
+        uint256 balance;
+        uint256 withdrawnBalance; // If the withdrawn-balance not empty, you can't withdraw.
+        uint256 appealedBalance; // If the appeal-balane not empty, you can't withdraw.
+        uint256 lastWithdrawnHeight; // When you submit a appeal, your height should greater than the lastWithdrawnHeight.
+        address lastSelectedWorker; // The worker specified.
+        uint256 interest; // interest amount
+    }
+&nbsp;
+    mapping(address=&gt;User) internal users;
+    Set.Data private users_list; // for iterations.
+&nbsp;
+    // paramaeters
+    uint256 public withdraw_fee_numerator = 0; // fee of withdraw
+    uint256 public withdraw_fee_denominator = 10000; // true_fee = value * withdraw_fee_numerator / withdraw_fee_denominator
+    uint256 public worker_balance_limit = 1000000 ether; // The upper limit for worker balance
+    uint256 public user_balance_limit = 300000 ether; // The upper limit per users
+    uint256 public tx_upper_limit = 20000 ether; // The upper limit per tx
+    uint256 public tx_lower_limit = 1 ether; // The lower limit per tx
+    uint256 public withdraw_upper_limit = 20000 ether; // The upper limit when withdraw
+    bool public allowOwnerBeContract = false; // If allow the owner be a contract
+&nbsp;
+    // stats
+    uint256 public total_balance = 0;
+&nbsp;
+    modifier onlyOwner() {require(msg.sender == owner, "You're not the owner of this contract");_;}
+    modifier onlyEnabled() {<span class="missing-if-branch" title="else path not taken" >E</span>require(enabled);_;}
+    modifier haveWorkers() {require(workers_list.getAll().length &gt; 0, "There are no workers now");_;}
+&nbsp;
+    constructor () public {
+        owner = msg.sender;
+    }
+&nbsp;
+    // owner can enable and disable rnode contract
+<span class="fstat-no" title="function not covered" >    function enableContract() public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        enabled = true</span>;
+    }
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function disableContract() public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        enabled = false</span>;
+    }
+&nbsp;
+    // judge if an address is a contract address
+    function isContract(address addr) public view returns (bool) {
+        uint size;
+        assembly { size := extcodesize(addr) }
+        return size &gt; 0;
+    }
+&nbsp;
+    // User
+    /**
+     * User deposit money to the system, system select a worker then send the money to it.
+     * Then record the amount to the user's account.
+     * If the user's withdrawn account has money, he can't deposit.
+     * Emits a {Deposit} event.
+     */
+    function deposit() payable external onlyEnabled haveWorkers {
+        require(msg.value &gt;= tx_lower_limit, "Amount less than the lower limit");
+        require(msg.value &lt;= tx_upper_limit, "Amount greater than the upper limit");
+        if(users_list.contains(msg.sender)) {
+            // check the upper limit
+            uint256 balance = users[msg.sender].balance + msg.value;
+            <span class="missing-if-branch" title="else path not taken" >E</span>require(balance &lt;= user_balance_limit, "User's balance greater than the upper limit");
+        } else {
+            users[msg.sender].balance = 0;
+            users_list.insert(msg.sender);
+        }
+        // select worker, find the minest account
+        address[] memory items = workers_list.getAll();
+        address selected = items[0];
+        for(uint i = 1; i &lt; items.length; i++) {
+            if (workers[items[i]].balance &lt; workers[selected].balance) {
+                selected = items[i];
+            }
+        }
+        // check upper limit of the worker
+        <span class="missing-if-branch" title="else path not taken" >E</span>require((workers[selected].balance + msg.value) &lt; worker_balance_limit, "Amount greater than worker's upper limit");
+&nbsp;
+        // transfer
+        selected.transfer(msg.value);
+        
+        // worker balance
+        workers[selected].balance = workers[selected].balance.add(msg.value);
+&nbsp;
+        // user balance
+        users[msg.sender].balance = users[msg.sender].balance.add(msg.value);
+&nbsp;
+        // total
+        total_balance += msg.value;
+&nbsp;
+        // emit event
+        emit Deposit(msg.sender, selected, msg.value);
+    }
+&nbsp;
+    /**
+     * User withdraw money. The system select a worker and emit a Event to notify it.
+     * Move the withdrawn money to the withdrawn account, wait until the worker refund.
+     * If the user's appeal account has money, he can't withdraw.
+     * Emits a {Withdraw} event.
+     */
+<span class="fstat-no" title="function not covered" >    function withdraw(uint256 amount) external onlyEnabled haveWorkers {</span>
+<span class="cstat-no" title="statement not covered" >        require(amount &gt;= 1 ether, "Amount need to greater than or equal to 1 CPC")</span>;
+<span class="cstat-no" title="statement not covered" >        require(amount &lt;= withdraw_upper_limit, "Amount greater than the upper limit")</span>;
+<span class="cstat-no" title="statement not covered" >        require(users_list.contains(msg.sender), "You did't deposit money")</span>;
+<span class="cstat-no" title="statement not covered" >        require(amount &lt;= users[msg.sender].balance, "Amount greater than deposited money")</span>;
+<span class="cstat-no" title="statement not covered" >        require(users[msg.sender].withdrawnBalance == 0, "You have a unhandled withdrawn transaction")</span>;
+<span class="cstat-no" title="statement not covered" >        require(users[msg.sender].appealedBalance == 0, "You have a unhandled appealed transaction")</span>;
+        // select worker
+<span class="cstat-no" title="statement not covered" >        address[] memory items = workers_list.getAll();</span>
+<span class="cstat-no" title="statement not covered" >        address selected = items[0];</span>
+<span class="cstat-no" title="statement not covered" >        for(uint i = 1; i &lt; items.length; i++) {</span>
+<span class="cstat-no" title="statement not covered" >            if (workers[items[i]].balance &gt; workers[selected].balance) {</span>
+<span class="cstat-no" title="statement not covered" >                selected = items[i]</span>;
+            }
+        }
+&nbsp;
+        // transfer the balance to the withdrawn balance
+<span class="cstat-no" title="statement not covered" >        users[msg.sender].balance -= amount</span>;
+<span class="cstat-no" title="statement not covered" >        users[msg.sender].withdrawnBalance = amount</span>;
+<span class="cstat-no" title="statement not covered" >        users[msg.sender].lastWithdrawnHeight = block.number</span>;
+<span class="cstat-no" title="statement not covered" >        users[msg.sender].lastSelectedWorker = selected</span>;
+&nbsp;
+        // total
+<span class="cstat-no" title="statement not covered" >        total_balance -= amount</span>;
+&nbsp;
+        // emit event
+<span class="cstat-no" title="statement not covered" >        emit Withdraw(msg.sender, selected, amount, block.number);</span>
+    }
+&nbsp;
+    /**
+     * When the user's withdrawn account has money, 
+     * and the block height minus withdrawn height greater than 6, 
+     * the user can submit an appeal.
+     * Emits an {Appeal} event.
+     */
+<span class="fstat-no" title="function not covered" >    function appeal() external onlyEnabled {</span>
+<span class="cstat-no" title="statement not covered" >        require(users_list.contains(msg.sender), "You did't deposit money")</span>;
+<span class="cstat-no" title="statement not covered" >        require(users[msg.sender].appealedBalance == 0, "You have a unhandled appealed transaction")</span>;
+<span class="cstat-no" title="statement not covered" >        require(users[msg.sender].withdrawnBalance &gt; 0, "You haven't a unhandled withdrawn transaction")</span>;
+<span class="cstat-no" title="statement not covered" >        require(block.number - users[msg.sender].lastWithdrawnHeight &gt;= 6, "You can't appeal until there are 6 blocks that have been generated after withdrew")</span>;
+<span class="cstat-no" title="statement not covered" >        users[msg.sender].appealedBalance = users[msg.sender].withdrawnBalance</span>;
+<span class="cstat-no" title="statement not covered" >        users[msg.sender].withdrawnBalance = 0</span>;
+<span class="cstat-no" title="statement not covered" >        emit Appeal(msg.sender, users[msg.sender].appealedBalance, block.number);</span>
+    }
+&nbsp;
+    /**
+     * Returns the amount of balance owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256) {
+        <span class="missing-if-branch" title="if path not taken" >I</span>if(!users_list.contains(account)) {
+<span class="cstat-no" title="statement not covered" >            return 0;</span>
+        }
+        return users[account].balance;
+    }
+&nbsp;
+    /**
+     * Returns the amount of withdrawn balance owned by `account`.
+     */
+<span class="fstat-no" title="function not covered" >    function getWithdrawnBalance(address account) external view returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        if(!users_list.contains(account)) {</span>
+<span class="cstat-no" title="statement not covered" >            return 0;</span>
+        }
+<span class="cstat-no" title="statement not covered" >        return users[account].withdrawnBalance;</span>
+    }
+&nbsp;
+    /**
+     * Returns the amount of appealed balance owned by `account`.
+     */
+<span class="fstat-no" title="function not covered" >    function getAppealedBalance(address account) external view returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        if(!users_list.contains(account)) {</span>
+<span class="cstat-no" title="statement not covered" >            return 0;</span>
+        }
+<span class="cstat-no" title="statement not covered" >        return users[account].appealedBalance;</span>
+    }
+&nbsp;
+    /**
+     * Returns the amount of interest owned by `account`.
+     */
+<span class="fstat-no" title="function not covered" >    function getInterest(address account) external view returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        if(!users_list.contains(account)) {</span>
+<span class="cstat-no" title="statement not covered" >            return 0;</span>
+        }
+<span class="cstat-no" title="statement not covered" >        return users[account].interest;</span>
+    }
+&nbsp;
+    /**
+     * Moves `amount` tokens from the caller's account to `recipient`.
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+<span class="fstat-no" title="function not covered" >    function transfer(address recipient, uint256 amount) external onlyEnabled returns (bool) {</span>
+<span class="cstat-no" title="statement not covered" >        require(users_list.contains(msg.sender), "You haven't deposited money")</span>;
+<span class="cstat-no" title="statement not covered" >        require(users[msg.sender].balance &gt;= amount, "You balance is less than value")</span>;
+<span class="cstat-no" title="statement not covered" >        users[recipient].balance += amount</span>;
+<span class="cstat-no" title="statement not covered" >        users[msg.sender].balance -= amount</span>;
+<span class="cstat-no" title="statement not covered" >        emit Transfer(msg.sender, recipient, amount);</span>
+    }
+&nbsp;
+    // Worker
+    /**
+     * Worker refund money to user when user submit withdraw request.
+     * Emits a {RefundMoney} event.
+     */
+<span class="fstat-no" title="function not covered" >    function refund(address addr) external payable {</span>
+<span class="cstat-no" title="statement not covered" >        require(workers_list.contains(msg.sender), "You're not a worker")</span>;
+<span class="cstat-no" title="statement not covered" >        require(users_list.contains(addr), "The addr is not an user")</span>;
+<span class="cstat-no" title="statement not covered" >        require(users[addr].withdrawnBalance &gt; 0, "The withdrawn balance should greater than 0")</span>;
+<span class="cstat-no" title="statement not covered" >        require(users[addr].withdrawnBalance == msg.value, "The value is not equal to the withdrawn balance")</span>;
+<span class="cstat-no" title="statement not covered" >        require(users[addr].lastSelectedWorker == msg.sender, "You're not the selected worker")</span>;
+<span class="cstat-no" title="statement not covered" >        addr.transfer(msg.value)</span>;
+<span class="cstat-no" title="statement not covered" >        users[addr].withdrawnBalance = 0</span>;
+<span class="cstat-no" title="statement not covered" >        workers[msg.sender].balance -= msg.value</span>;
+        // TODO 给 worker 相应的手续费
+<span class="cstat-no" title="statement not covered" >        emit RefundMoney(msg.sender, addr, msg.value); </span>
+    }
+&nbsp;
+    // Admin
+&nbsp;
+    /**
+     * Add new worker to the system.
+     * Returns a boolean value indicating whether the operation succeeded.
+     * Emits a {AddWorker} event.
+     */
+    function addWorker(address account) external onlyOwner onlyEnabled {
+        require(!workers[account].existed, "The worker has already existed!");
+        workers[account] = Worker({balance: 0, existed: true});
+        workers_list.insert(account);
+        emit AddWorker(account);
+    }
+    
+    /**
+     * Remove a existed worker from system.
+     * Returns a boolean value indicating whether the operation succeeded.
+     * Emits a {RemoveWorker} event.
+     */
+    function removeWorker(address account) external onlyOwner onlyEnabled {
+        require(workers[account].existed, "The worker not existed!");
+        delete workers[account];
+        workers_list.remove(account);
+        emit RemoveWorker(account);
+    }
+&nbsp;
+    /**
+     * Check an address whether the worker.
+     */
+    function isWorker(address account) external view returns (bool) {
+        return workers[account].existed;
+    }
+&nbsp;
+    /**
+     * Count of all workers
+     */
+    function workersCnt() external view returns (uint) {
+        return workers_list.getAll().length;
+    }
+&nbsp;
+    /**
+     * Returns the amount of balance owned by `account`.
+     */
+    function workerBalanceOf(address account) external view returns (uint256) {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(workers_list.contains(account), "Can't find this account");
+        return workers[account].balance;
+    }
+&nbsp;
+    /**
+     * Stats the interest that all workers earned yesterday and distributed by the ratio of balance of all addresses.
+     * Returns a boolean value indicating whether the operation succeeded.
+     * Emits a {StatsInterest} event.
+     */
+<span class="fstat-no" title="function not covered" >    function statsInterest(uint256 all_interest) external onlyOwner onlyEnabled {</span>
+<span class="cstat-no" title="statement not covered" >        address[] memory items = users_list.getAll();</span>
+<span class="cstat-no" title="statement not covered" >        for(uint i = 0; i &lt; items.length; i++) {</span>
+<span class="cstat-no" title="statement not covered" >            uint256 interest = all_interest * users[items[i]].balance / total_balance;</span>
+<span class="cstat-no" title="statement not covered" >            users[items[i]].balance += interest</span>;
+<span class="cstat-no" title="statement not covered" >            users[items[i]].interest += interest</span>;
+<span class="cstat-no" title="statement not covered" >            total_balance += interest</span>;
+        }
+<span class="cstat-no" title="statement not covered" >        emit StatsInterest(all_interest, total_balance, items.length, block.number);</span>
+    }
+&nbsp;
+    /**
+     * Set the fee when withdraw money. The unit of the param is 1/10000. And the param should greater than 0 and less than 100 (0 - 1%)
+     */
+    function setWithdrawFee(uint256 fee) external onlyOwner onlyEnabled {
+        require(fee &lt;= 100, "The fee should greater than 0 and less than 100 (0 - 1%)");
+        withdraw_fee_numerator = fee;
+    }
+&nbsp;
+    /**
+     * Set the upper limit when withdraw
+     */
+<span class="fstat-no" title="function not covered" >    function setWithdrawnUpperLimit(uint256 limit) external onlyOwner onlyEnabled {</span>
+<span class="cstat-no" title="statement not covered" >        require(limit &gt;= 1 ether, "The upper limit should be greater than 1 CPC")</span>;
+<span class="cstat-no" title="statement not covered" >        withdraw_upper_limit = limit</span>;
+    }
+&nbsp;
+    /**
+     * Set the upper limit of worker's balance.
+     */
+    function setWorkerBalanceLimit(uint256 limit) external onlyOwner onlyEnabled {
+        require(limit &gt;= 1 ether, "The upper limit should greater than 1 CPC");
+        worker_balance_limit = limit;
+    }
+&nbsp;
+    /**
+     * Set the upper limit of user's balance.
+     */
+    function setUserBalanceLimit(uint256 limit) external onlyOwner onlyEnabled {
+        require(limit &gt;= 1 ether, "The upper limit should greater than 1 CPC");
+        user_balance_limit = limit;
+    }
+&nbsp;
+    /**
+     * Set the upper limit per tx.
+     */
+    function setTxUpperLimit(uint256 limit) external onlyOwner onlyEnabled {
+        require(limit &gt;= 1 ether, "The upper limit should greater than 1 CPC");
+        tx_upper_limit = limit;
+    }
+&nbsp;
+    /**
+     * Set the lower limit per tx.
+     */
+    function setTxLowerLimit(uint256 limit) external onlyOwner onlyEnabled {
+        require(limit &gt;= 1 ether, "The lower limit should greater than 1 CPC");
+        tx_lower_limit = limit;
+    }
+&nbsp;
+    function setAllowOwnerBeContract(bool allow) external onlyOwner {
+        allowOwnerBeContract = allow;
+    }
+&nbsp;
+    /**
+     * Change the owner of the contract. If the address is a contract, the contract should be IAdmin.
+     */
+    function changeOwner(address new_owner) external onlyOwner onlyEnabled {
+        if(isContract(new_owner)) {
+            require(allowOwnerBeContract, "Don't allow contract be the owner");
+        }
+        owner = new_owner;
+    }
+&nbsp;
+    /**
+     * When a user didn't receive the amount after he withdrew, he can submit an appeal.
+     * Admin call this function to refund.
+     * Emits a {AdminAppealRefund} event.
+     */
+<span class="fstat-no" title="function not covered" >    function AppealRefund(address addr) payable external onlyOwner onlyEnabled {</span>
+<span class="cstat-no" title="statement not covered" >        require(users_list.contains(addr), "The addr is not an user")</span>;
+<span class="cstat-no" title="statement not covered" >        require(users[addr].appealedBalance &gt; 0, "The withdrawn balane should greater than 0")</span>;
+<span class="cstat-no" title="statement not covered" >        require(users[addr].appealedBalance == msg.value, "The value is not equal to the withdrawn balance")</span>;
+<span class="cstat-no" title="statement not covered" >        require(block.number - users[addr].lastWithdrawnHeight &gt;= 6, "You can't appeal until there are 6 blocks that have been generated after withdrew")</span>;
+<span class="cstat-no" title="statement not covered" >        addr.transfer(msg.value)</span>;
+<span class="cstat-no" title="statement not covered" >        users[addr].appealedBalance = 0</span>;
+        // TODO 给 admin 相应的手续费
+<span class="cstat-no" title="statement not covered" >        emit AdminAppealRefund(addr, msg.value);</span>
+    }
+&nbsp;
+    /**
+     * This operation will be executed when someone do a wrong operate, e.g., send CPC directly to the contract.
+     * Use this function to refund CPC to the owner.
+     */
+<span class="fstat-no" title="function not covered" >    function refundToOwner() public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        owner.transfer(address(this).balance)</span>;
+    }
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Mon Apr 26 2021 16:58:34 GMT+0800 (China Standard Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>
