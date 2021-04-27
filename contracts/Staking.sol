@@ -141,13 +141,13 @@ contract Staking is IAdmin, IStaking, IWorker {
         }
 
         // transfer the balance to the withdrawn balance
-        users[msg.sender].balance -= amount;
+        users[msg.sender].balance = users[msg.sender].balance.sub(amount);
         users[msg.sender].withdrawnBalance = amount;
         users[msg.sender].lastWithdrawnHeight = block.number;
         users[msg.sender].lastSelectedWorker = selected;
 
         // total
-        total_balance -= amount;
+        total_balance = total_balance.sub(amount);
 
         // emit event
         emit Withdraw(msg.sender, selected, amount, block.number);
@@ -236,7 +236,7 @@ contract Staking is IAdmin, IStaking, IWorker {
         require(users[addr].lastSelectedWorker == msg.sender, "You're not the selected worker");
         addr.transfer(msg.value);
         users[addr].withdrawnBalance = 0;
-        workers[msg.sender].balance -= msg.value;
+        workers[msg.sender].balance = workers[msg.sender].balance.sub(msg.value);
         // TODO 给 worker 相应的手续费
         emit RefundMoney(msg.sender, addr, msg.value); 
     }
@@ -295,12 +295,13 @@ contract Staking is IAdmin, IStaking, IWorker {
      * Emits a {StatsInterest} event.
      */
     function statsInterest(uint256 all_interest) external onlyOwner onlyEnabled {
+        require(total_balance > 0, "The total balance is empty now");
         address[] memory items = users_list.getAll();
         for(uint i = 0; i < items.length; i++) {
-            uint256 interest = all_interest * users[items[i]].balance / total_balance;
-            users[items[i]].balance += interest;
-            users[items[i]].interest += interest;
-            total_balance += interest;
+            uint256 interest = all_interest.mul(users[items[i]].balance).div(total_balance);
+            users[items[i]].balance = users[items[i]].balance.add(interest);
+            users[items[i]].interest = users[items[i]].interest.add(interest);
+            total_balance = total_balance.add(interest);
         }
         emit StatsInterest(all_interest, total_balance, items.length, block.number);
     }
@@ -372,7 +373,7 @@ contract Staking is IAdmin, IStaking, IWorker {
      * Admin call this function to refund.
      * Emits a {AdminAppealRefund} event.
      */
-    function AppealRefund(address addr) payable external onlyOwner onlyEnabled {
+    function appealRefund(address addr) payable external onlyOwner onlyEnabled {
         require(users_list.contains(addr), "The addr is not an user");
         require(users[addr].appealedBalance > 0, "The withdrawn balane should greater than 0");
         require(users[addr].appealedBalance == msg.value, "The value is not equal to the withdrawn balance");

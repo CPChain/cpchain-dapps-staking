@@ -92,5 +92,5 @@ interface IAdmin {
      * Admin call this function to refund.
      * Emits a {AdminAppealRefund} event.
      */
-    function AppealRefund(address addr) payable external;
+    function appealRefund(address addr) payable external;
 }
