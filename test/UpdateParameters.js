@@ -223,6 +223,16 @@ contract("Staking", (accounts) => {
       "The tx_lower_limit should be 1200000 CPC"
     );
   });
+  it('Set withdraw_upper_limit to 1200001 CPC', async () => {
+    const instance = await Staking.deployed();
+    let limit = Web3.utils.toWei('1200001', 'ether')
+    await instance.setWithdrawnUpperLimit(limit)
+    assert.equal(
+      await instance.withdraw_upper_limit(),
+      limit,
+      "The withdraw_upper_limit should be 1200001 CPC"
+    );
+  });
   it("change owner", async ()=> {
     const instance = await Staking.deployed();
     // change first

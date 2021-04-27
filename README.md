@@ -1,5 +1,7 @@
 # CPChain Staking
 
+58.5
+
 ## Unit Tests
 
 ```bash

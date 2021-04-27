@@ -44,6 +44,15 @@ contract("Staking", (accounts) => {
       assert.ok(error.toString().includes("There are no workers now"));
     }
   });
+  it("Withdraw without any workers", async ()=> {
+    const instance = await Staking.deployed();
+    try {
+      await instance.withdraw(web3.utils.toWei("10", "ether"))
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("There are no workers now"))
+    }
+  })
   it("Deposit 10 CPC after added three workers", async () => {
     const instance = await Staking.deployed();
     await init(instance);
@@ -176,6 +185,52 @@ contract("Staking", (accounts) => {
     } catch(error) {
       assert.ok(error.toString().includes("User's balance greater than the upper limit"))
     }
-
+    console.log(await web3.utils.fromWei(new BN(await web3.eth.getBalance(address))))
   });
+
+  it("Withdraw 10 CPC", async ()=> {
+    const instance = await Staking.deployed();
+    const address = accounts[5];
+    // Withdraw more than 20 CPC (upper limit per tx)
+    await instance.setWithdrawnUpperLimit(web3.utils.toWei('20', 'ether'))
+    try {
+      await instance.withdraw(web3.utils.toWei('20.1', 'ether'), {from: address})
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("Amount greater than the upper limit"))
+    }
+    try {
+      await instance.withdraw(web3.utils.toWei('0.1', 'ether'), {from: address})
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("Amount need to greater than or equal to 1 CPC"))
+    }
+
+    // Withdraw 10 CPC
+    let tx = await instance.withdraw(web3.utils.toWei('10', 'ether'), {from: address})
+
+    let selected = null
+    let lastBlock = null
+
+    // Test if the event have been emited
+    truffleAssert.eventEmitted(tx, "Withdraw", (ev) => {
+      selected = ev.selectedWorker;
+      lastBlock = ev.blockHeight
+      return ev.value == web3.utils.toWei('10', 'ether');
+    });
+    assert.equal(tx.receipt.blockNumber, lastBlock.toString(), "The lastBlock is error")
+
+    // The selected worker should be worker1
+    assert.equal(selected, workers[0], "The selected worker is error")
+    assert.equal((await instance.workerBalanceOf(selected)).toString(), web3.utils.toWei('10', 'ether'), "The balance of worker in thr contract is error")
+
+    // Validate the balance in the contract
+    assert.equal((await instance.balanceOf(address)).toString(), web3.utils.toWei('20', 'ether'), "The balance of user in the contract is error")
+    assert.equal((await instance.getWithdrawnBalance(address)).toString(), web3.utils.toWei('10', 'ether'), "The withdrawnbBalance of user in the contract is error")
+    assert.equal((await instance.getAppealedBalance(address)).toString(), web3.utils.toWei('0', 'ether'), "The appealedBalance of user in the contract is error")
+    assert.equal((await instance.total_balance()).toString(), web3.utils.toWei('20', 'ether'), "Total balance is error")
+
+
+  })
+
 });
