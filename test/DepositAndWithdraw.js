@@ -132,5 +132,50 @@ contract("Staking", (accounts) => {
     } catch(error) {
       assert.ok(error.toString().includes("Amount greater than the upper limit"));
     }
+
+    // Deposit 0.1 CPC to the contract
+    try {
+      await instance.deposit({ from: address, value: web3.utils.toWei('0.1', 'ether') })
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("Amount less than the lower limit"));
+    }
+
+    // Modify the upper limit for the user's balance to 30 CPC
+    await instance.setUserBalanceLimit(web3.utils.toWei('30', 'ether'))
+
+    // Deposit 11 CPC again, but this time will failed
+    try {
+      await instance.deposit({ from: address, value: web3.utils.toWei('11', 'ether') })
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("User's balance greater than the upper limit"))
+    }
+
+    // Validate balance again
+    let balance_expected = new BN(value).mul(new BN(2)).toString()
+    assert.equal((await instance.balanceOf(address)).toString(), balance_expected, "The balance of user in the contract is error")
+
+    // Deposit 9 CPC again, this tx should be success.
+    await instance.deposit({ from: address, value: web3.utils.toWei('9', 'ether') })
+    balance_expected = new BN(balance_expected).add(new BN(web3.utils.toWei('9', 'ether')))
+    assert.equal((await instance.balanceOf(address)).toString(), balance_expected, "The balance of user in the contract is error")
+
+    // Validate workers
+    assert.equal((await instance.workerBalanceOf(workers[0])).toString(), web3.utils.toWei('10', 'ether'), "The balance of worker in thr contract is error")
+    assert.equal((await instance.workerBalanceOf(workers[1])).toString(), web3.utils.toWei('10', 'ether'), "The balance of worker in thr contract is error")
+    assert.equal((await instance.workerBalanceOf(workers[2])).toString(), web3.utils.toWei('9', 'ether'), "The balance of worker in thr contract is error")
+
+    // Deposit one more CPC
+    await instance.deposit({ from: address, value: web3.utils.toWei('1', 'ether') })
+    assert.equal((await instance.workerBalanceOf(workers[2])).toString(), web3.utils.toWei('10', 'ether'), "The balance of worker in thr contract is error")
+
+    try {
+      await instance.deposit({ from: address, value: web3.utils.toWei('1', 'ether') })
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("User's balance greater than the upper limit"))
+    }
+
   });
 });
