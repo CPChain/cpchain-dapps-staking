@@ -191,6 +191,13 @@ contract("Staking", (accounts) => {
   it("Withdraw 10 CPC", async ()=> {
     const instance = await Staking.deployed();
     const address = accounts[5];
+    // Withdraw more than 30 CPC (The balance of the user)
+    try {
+      await instance.withdraw(web3.utils.toWei('30.1', 'ether'), {from: address})
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("Amount greater than deposited money"))
+    }
     // Withdraw more than 20 CPC (upper limit per tx)
     await instance.setWithdrawnUpperLimit(web3.utils.toWei('20', 'ether'))
     try {
@@ -231,6 +238,13 @@ contract("Staking", (accounts) => {
     assert.equal((await instance.total_balance()).toString(), web3.utils.toWei('20', 'ether'), "Total balance is error")
 
 
+    // Withdraw again, failed
+    try {
+      await instance.withdraw(web3.utils.toWei('10', 'ether'), {from: address})
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("You have a unhandled withdrawn transaction"))
+    }
   })
 
 });

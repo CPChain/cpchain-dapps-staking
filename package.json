@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "test": "truffle run coverage"
+    "test": "truffle test",
+    "test:coverage": "truffle run coverage"
   },
   "dependencies": {
     "solidity-coverage": "^0.7.16",
