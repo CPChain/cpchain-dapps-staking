@@ -1,4 +1,10 @@
 
+var BN = web3.utils.BN;
+
+exports.cpc = (val) => {
+  return web3.utils.toWei(String(val), "ether")
+}
+
 // Initialize workers
 exports.init_workers = async function (workers, instance) {
   // Add a worker
@@ -24,4 +30,49 @@ exports.get_workers_balance = async function(workers) {
     data[workers[i]] = await web3.eth.getBalance(workers[i]);
   }
   return data;
+}
+
+exports.getBalance = async (address) => {
+  return await web3.eth.getBalance(address)
+}
+
+exports.getGasUsedInCPC = async (tx) => {
+  let tx_origin = await web3.eth.getTransaction(tx.tx);
+  let gasPrice = tx_origin.gasPrice;
+
+  return new BN(tx.receipt.gasUsed).mul(new BN(gasPrice)).toString();
+}
+
+exports.checkBalance = async (address, expected) => {
+  assert.equal(await getBalance(address), expected, "Balance is error")
+}
+
+exports.checkNormalBalance = async (instance, address, expected) => {
+  if (typeof(expected) !== 'string') {
+    expected = expected.toString()
+  }
+  assert.equal((await instance.balanceOf(address)).toString(), expected, "The balance of user in the contract is error")
+}
+
+exports.checkWorkerBalance = async (instance, address, expected) => {
+  if (typeof(expected) !== 'string') {
+    expected = expected.toString()
+  }
+  assert.equal((await instance.workerBalanceOf(address)).toString(), expected, "The balance of worker in thr contract is error")
+}
+
+exports.checkTotalBalance = async (instance, expected) => {
+  assert.equal((await instance.total_balance()).toString(), expected, "Total balance is error")
+}
+
+exports.checkWithdrawnBalance = async (instance, address, expected) => {
+  assert.equal((await instance.getWithdrawnBalance(address)).toString(), expected, "The withdrawnbBalance of user in the contract is error")
+}
+
+exports.checkAppealedBalance = async (instance, address, expected) => {
+  assert.equal((await instance.getAppealedBalance(address)).toString(), expected, "The appealedBalance of user in the contract is error")
+}
+
+exports.checkWorkerAddress = (expected, actual) => {
+  assert.equal(expected, actual, "The selected worker is error")
 }

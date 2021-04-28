@@ -9,12 +9,10 @@ contract("Staking", (accounts) => {
   it("Deposit 10 CPC when not have any workers", async () => {
     const instance = await Staking.deployed();
     const address = accounts[1];
-    let balance = await web3.eth.getBalance(address);
-    console.log("Balance of ", address, "is", balance);
     try {
       await instance.deposit({
         from: address,
-        value: web3.utils.toWei("10", "ether"),
+        value: utils.cpc(10),
       });
       assert.fail();
     } catch (error) {
@@ -24,7 +22,7 @@ contract("Staking", (accounts) => {
   it("Withdraw without any workers", async ()=> {
     const instance = await Staking.deployed();
     try {
-      await instance.withdraw(web3.utils.toWei("10", "ether"))
+      await instance.withdraw(utils.cpc(10))
       assert.fail()
     } catch(error) {
       assert.ok(error.toString().includes("There are no workers now"))
@@ -35,10 +33,10 @@ contract("Staking", (accounts) => {
     await utils.init_workers(workers, instance);
     let workers_before_balance = await utils.get_workers_balance(workers);
     const address = accounts[5];
-    let balance_before = await web3.eth.getBalance(address);
-    let value = web3.utils.toWei("10", "ether");
+    let balance_before = await utils.getBalance(address);
+    let value = utils.cpc(10);
     let tx = await instance.deposit({ from: address, value: value });
-    let balance_after = await web3.eth.getBalance(address);
+    let balance_after = await utils.getBalance(address);
     // check event
     let selected = null;
     truffleAssert.eventEmitted(tx, "Deposit", (ev) => {
@@ -46,13 +44,10 @@ contract("Staking", (accounts) => {
       return ev.value == value;
     });
     assert.equal(selected, workers[0], "The selected worker should be the worker1")
-    let selectd_balance = await web3.eth.getBalance(selected);
-    // get gasPrice
-    let tx_origin = await web3.eth.getTransaction(tx.tx);
-    let gasPrice = tx_origin.gasPrice;
-
+    let selectd_balance = await utils.getBalance(selected);
+    
     // gasUsed
-    let gasUsed = new BN(tx.receipt.gasUsed).mul(new BN(gasPrice)).toString();
+    let gasUsed = await utils.getGasUsedInCPC(tx);
     let balance_after_with_fee = new BN(balance_after)
       .add(new BN(gasUsed))
       .toString();
@@ -72,10 +67,10 @@ contract("Staking", (accounts) => {
     );
 
     // validate the balance of user in the contract
-    assert.equal((await instance.balanceOf(address)).toString(), value, "The balance of user in the contract is error")
+    await utils.checkNormalBalance(instance, address, value)
 
     // validate the balance of the worker
-    assert.equal((await instance.workerBalanceOf(selected)).toString(), value, "The balance of worker in thr contract is error")
+    await utils.checkWorkerBalance(instance, selected, value)
 
     // Deposit again with 0 CPC
     try {
@@ -92,7 +87,7 @@ contract("Staking", (accounts) => {
       return ev.value == value;
     });
     assert.equal(selected, workers[1], "The selected worker should be the worker2")
-    selectd_balance = await web3.eth.getBalance(selected);
+    selectd_balance = await utils.getBalance(selected);
     // The worker should add 10 CPC
     assert.equal(
       new BN(selectd_balance).toString(),
@@ -100,20 +95,20 @@ contract("Staking", (accounts) => {
       "The worker should add 10 CPC"
     );
     // validate the balance of the worker
-    assert.equal((await instance.workerBalanceOf(selected)).toString(), value, "The balance of worker in thr contract is error")
+    await utils.checkWorkerBalance(instance, selected, value)
 
     // validate the balance of user in the contract
-    assert.equal((await instance.balanceOf(address)).toString(), new BN(value).mul(new BN(2)).toString(), "The balance of user in the contract is error")
+    await utils.checkNormalBalance(instance, address, new BN(value).mul(new BN(2)))
 
     // Validate the total balance of all user
-    assert.equal((await instance.total_balance()).toString(), new BN(value).mul(new BN(2)).toString(), "Total balance is error")
+    await utils.checkTotalBalance(instance, new BN(value).mul(new BN(2)))
 
     // Modify the parameter of up limit per tx to 20 CPC
-    await instance.setTxUpperLimit(web3.utils.toWei('20', 'ether'))
+    await instance.setTxUpperLimit(utils.cpc(20))
 
     // Deposit 21 CPC to the contract
     try {
-      await instance.deposit({ from: address, value: web3.utils.toWei('21', 'ether') })
+      await instance.deposit({ from: address, value: utils.cpc(21) })
       assert.fail()
     } catch(error) {
       assert.ok(error.toString().includes("Amount greater than the upper limit"));
@@ -121,48 +116,45 @@ contract("Staking", (accounts) => {
 
     // Deposit 0.1 CPC to the contract
     try {
-      await instance.deposit({ from: address, value: web3.utils.toWei('0.1', 'ether') })
+      await instance.deposit({ from: address, value: utils.cpc(0.1) })
       assert.fail()
     } catch(error) {
       assert.ok(error.toString().includes("Amount less than the lower limit"));
     }
 
     // Modify the upper limit for the user's balance to 30 CPC
-    await instance.setUserBalanceLimit(web3.utils.toWei('30', 'ether'))
+    await instance.setUserBalanceLimit(utils.cpc(30))
 
     // Deposit 11 CPC again, but this time will failed
     try {
-      await instance.deposit({ from: address, value: web3.utils.toWei('11', 'ether') })
+      await instance.deposit({ from: address, value: utils.cpc(11) })
       assert.fail()
     } catch(error) {
       assert.ok(error.toString().includes("User's balance greater than the upper limit"))
     }
 
     // Validate balance again
-    let balance_expected = new BN(value).mul(new BN(2)).toString()
-    assert.equal((await instance.balanceOf(address)).toString(), balance_expected, "The balance of user in the contract is error")
-
+    await utils.checkNormalBalance(instance, address, new BN(value).mul(new BN(2)))
+    
     // Deposit 9 CPC again, this tx should be success.
-    await instance.deposit({ from: address, value: web3.utils.toWei('9', 'ether') })
-    balance_expected = new BN(balance_expected).add(new BN(web3.utils.toWei('9', 'ether')))
-    assert.equal((await instance.balanceOf(address)).toString(), balance_expected, "The balance of user in the contract is error")
+    await instance.deposit({ from: address, value: utils.cpc(9) })
+    await utils.checkNormalBalance(instance, address, new BN(value).mul(new BN(2)).add(new BN(utils.cpc(9))))
 
     // Validate workers
-    assert.equal((await instance.workerBalanceOf(workers[0])).toString(), web3.utils.toWei('10', 'ether'), "The balance of worker in thr contract is error")
-    assert.equal((await instance.workerBalanceOf(workers[1])).toString(), web3.utils.toWei('10', 'ether'), "The balance of worker in thr contract is error")
-    assert.equal((await instance.workerBalanceOf(workers[2])).toString(), web3.utils.toWei('9', 'ether'), "The balance of worker in thr contract is error")
+    await utils.checkWorkerBalance(instance, workers[0], utils.cpc(10))
+    await utils.checkWorkerBalance(instance, workers[1], utils.cpc(10))
+    await utils.checkWorkerBalance(instance, workers[2], utils.cpc(9))
 
     // Deposit one more CPC
-    await instance.deposit({ from: address, value: web3.utils.toWei('1', 'ether') })
-    assert.equal((await instance.workerBalanceOf(workers[2])).toString(), web3.utils.toWei('10', 'ether'), "The balance of worker in thr contract is error")
+    await instance.deposit({ from: address, value: utils.cpc(1) })
+    await utils.checkWorkerBalance(instance, workers[2], utils.cpc(10))
 
     try {
-      await instance.deposit({ from: address, value: web3.utils.toWei('1', 'ether') })
+      await instance.deposit({ from: address, value: utils.cpc(1) })
       assert.fail()
     } catch(error) {
       assert.ok(error.toString().includes("User's balance greater than the upper limit"))
     }
-    console.log(await web3.utils.fromWei(new BN(await web3.eth.getBalance(address))))
   });
 
   it("Withdraw 10 CPC", async ()=> {
@@ -170,28 +162,28 @@ contract("Staking", (accounts) => {
     const address = accounts[5];
     // Withdraw more than 30 CPC (The balance of the user)
     try {
-      await instance.withdraw(web3.utils.toWei('30.1', 'ether'), {from: address})
+      await instance.withdraw(utils.cpc(30.1), {from: address})
       assert.fail()
     } catch(error) {
       assert.ok(error.toString().includes("Amount greater than deposited money"))
     }
     // Withdraw more than 20 CPC (upper limit per tx)
-    await instance.setWithdrawnUpperLimit(web3.utils.toWei('20', 'ether'))
+    await instance.setWithdrawnUpperLimit(utils.cpc(20))
     try {
-      await instance.withdraw(web3.utils.toWei('20.1', 'ether'), {from: address})
+      await instance.withdraw(utils.cpc(20.1), {from: address})
       assert.fail()
     } catch(error) {
       assert.ok(error.toString().includes("Amount greater than the upper limit"))
     }
     try {
-      await instance.withdraw(web3.utils.toWei('0.1', 'ether'), {from: address})
+      await instance.withdraw(utils.cpc(0.1), {from: address})
       assert.fail()
     } catch(error) {
       assert.ok(error.toString().includes("Amount need to greater than or equal to 1 CPC"))
     }
 
     // Withdraw 10 CPC
-    let tx = await instance.withdraw(web3.utils.toWei('10', 'ether'), {from: address})
+    let tx = await instance.withdraw(utils.cpc(10), {from: address})
 
     let selected = null
     let lastBlock = null
@@ -200,24 +192,24 @@ contract("Staking", (accounts) => {
     truffleAssert.eventEmitted(tx, "Withdraw", (ev) => {
       selected = ev.selectedWorker;
       lastBlock = ev.blockHeight
-      return ev.value == web3.utils.toWei('10', 'ether');
+      return ev.value == utils.cpc(10);
     });
     assert.equal(tx.receipt.blockNumber, lastBlock.toString(), "The lastBlock is error")
 
     // The selected worker should be worker1
-    assert.equal(selected, workers[0], "The selected worker is error")
-    assert.equal((await instance.workerBalanceOf(selected)).toString(), web3.utils.toWei('10', 'ether'), "The balance of worker in thr contract is error")
+    utils.checkWorkerAddress(selected, workers[0])
+    await utils.checkWorkerBalance(instance, selected, utils.cpc(10))
 
     // Validate the balance in the contract
-    assert.equal((await instance.balanceOf(address)).toString(), web3.utils.toWei('20', 'ether'), "The balance of user in the contract is error")
-    assert.equal((await instance.getWithdrawnBalance(address)).toString(), web3.utils.toWei('10', 'ether'), "The withdrawnbBalance of user in the contract is error")
-    assert.equal((await instance.getAppealedBalance(address)).toString(), web3.utils.toWei('0', 'ether'), "The appealedBalance of user in the contract is error")
-    assert.equal((await instance.total_balance()).toString(), web3.utils.toWei('20', 'ether'), "Total balance is error")
+    await utils.checkNormalBalance(instance, address, utils.cpc(20))
+    await utils.checkWithdrawnBalance(instance, address, utils.cpc(10))
+    await utils.checkAppealedBalance(instance, address, utils.cpc(0))
+    await utils.checkTotalBalance(instance, utils.cpc(20))
 
 
     // Withdraw again, failed
     try {
-      await instance.withdraw(web3.utils.toWei('10', 'ether'), {from: address})
+      await instance.withdraw(utils.cpc(10), {from: address})
       assert.fail()
     } catch(error) {
       assert.ok(error.toString().includes("You have a unhandled withdrawn transaction"))
