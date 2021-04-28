@@ -1,34 +1,11 @@
 const Staking = artifacts.require("Staking");
 const truffleAssert = require("truffle-assertions");
+const utils = require("./utils")
 
 var BN = web3.utils.BN;
 
 contract("Staking", (accounts) => {
   const workers = [accounts[1], accounts[2], accounts[3]];
-  async function init(instance) {
-    // Add a worker
-    for (let i = 0; i < workers.length; i++) {
-      const worker = workers[i];
-      await instance.addWorker(worker);
-      assert.equal(
-        await instance.isWorker(worker),
-        true,
-        "This address should be worker"
-      );
-    }
-    assert.equal(
-      await instance.workersCnt(),
-      workers.length,
-      "Count should be 1"
-    );
-  }
-  async function get_workers_balance() {
-    let data = {};
-    for (let i = 0; i < workers.length; i++) {
-      data[workers[i]] = await web3.eth.getBalance(workers[i]);
-    }
-    return data;
-  }
   it("Deposit 10 CPC when not have any workers", async () => {
     const instance = await Staking.deployed();
     const address = accounts[1];
@@ -55,8 +32,8 @@ contract("Staking", (accounts) => {
   })
   it("Deposit 10 CPC after added three workers", async () => {
     const instance = await Staking.deployed();
-    await init(instance);
-    let workers_before_balance = await get_workers_balance();
+    await utils.init_workers(workers, instance);
+    let workers_before_balance = await utils.get_workers_balance(workers);
     const address = accounts[5];
     let balance_before = await web3.eth.getBalance(address);
     let value = web3.utils.toWei("10", "ether");
