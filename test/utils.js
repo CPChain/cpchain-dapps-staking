@@ -79,7 +79,10 @@ exports.checkWorkerAddress = (expected, actual) => {
 }
 
 exports.EVENT_DEPOSIT = "Deposit"
+
 exports.EVENT_WITHDRAW = "Withdraw"
+
+exports.EVENT_REFUND_MONEY = "RefundMoney"
 
 exports.checkEvent = async (tx, event, cb) => {
   let result;
@@ -88,4 +91,8 @@ exports.checkEvent = async (tx, event, cb) => {
     return true
   });
   await cb(result)
+}
+
+exports.add = (a, b) => {
+  return new BN(a).add(new BN(b))
 }

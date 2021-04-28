@@ -8,18 +8,49 @@ contract("Staking", (accounts) => {
   const workers = [accounts[1], accounts[2], accounts[3]];
   it("Deposit 10 CPC then withdraw then refund", async () => {
     const instance = await Staking.deployed();
-    const cpc_10 = web3.utils.toWei("10", "ether");
+    const cpc_10 = utils.cpc(10);
     const address = accounts[5];
     await utils.init_workers(workers, instance);
     // Deposit
-    await instance.deposit({ from: address, value: cpc_10 });
+    let b1 = await utils.getBalance(address)
+    let wb1 = await utils.getBalance(workers[0])
+    let tx = await instance.deposit({ from: address, value: cpc_10 });
+    let b2 = await utils.getBalance(address)
+
+    await utils.checkEvent(tx, utils.EVENT_DEPOSIT, async (e)=> {
+      let selected = e.selectedWorker
+      assert.equal(selected, workers[0])
+      assert.equal(e.value, cpc_10)
+      let gasUsed = await utils.getGasUsedInCPC(tx)
+      // b1 = b2 + cpc_10 + gasUsed
+      assert.equal(b1, utils.add(b2, cpc_10).add(new BN(gasUsed)))
+      await utils.checkWorkerBalance(instance, selected, cpc_10)
+      await utils.checkBalance(selected, utils.add(wb1, cpc_10))
+    })
+
+    await utils.checkNormalBalance(instance, address, cpc_10)
+    await utils.checkWithdrawnBalance(instance, address, '0')
+    await utils.checkAppealedBalance(instance, address, '0')
+    await utils.checkTotalBalance(instance, cpc_10)
 
     // Withdraw
-    await instance.withdraw(cpc_10, { from: address });
+    tx = await instance.withdraw(cpc_10, { from: address });
 
-    // workers[0] refund without any CPC
+    await utils.checkNormalBalance(instance, address, '0')
+    await utils.checkWithdrawnBalance(instance, address, cpc_10)
+    await utils.checkAppealedBalance(instance, address, '0')
+    await utils.checkTotalBalance(instance, '0')
+
+    let selected;
+    await utils.checkEvent(tx, utils.EVENT_WITHDRAW, async (ex) => {
+      selected = ex.selectedWorker
+      assert.equal(ex.value, cpc_10)
+      assert.equal(ex.account, address)
+    })
+
+    // selected refund without any CPC
     try {
-      await instance.refund(address, { from: workers[0]});
+      await instance.refund(address, { from: selected});
       assert.fail()
     } catch(error) {
       assert.ok(error.toString().includes("The value is not equal to the withdrawn balance"))
@@ -27,7 +58,7 @@ contract("Staking", (accounts) => {
 
     // workers[1] refund with more CPC than withdrawn
     try {
-      await instance.refund(address, { from: workers[0], value: web3.utils.toWei("10.1", "ether") });
+      await instance.refund(address, { from: selected, value: web3.utils.toWei("10.1", "ether") });
       assert.fail()
     } catch(error) {
       assert.ok(error.toString().includes("The value is not equal to the withdrawn balance"))
@@ -35,7 +66,7 @@ contract("Staking", (accounts) => {
 
     //workers[1] refund with less CPC than withdrawn
     try {
-      await instance.refund(address, { from: workers[0], value: web3.utils.toWei("9.9", "ether")});
+      await instance.refund(address, { from: selected, value: web3.utils.toWei("9.9", "ether")});
       assert.fail()
     } catch(error) {
       assert.ok(error.toString().includes("The value is not equal to the withdrawn balance"))
@@ -49,12 +80,36 @@ contract("Staking", (accounts) => {
       assert.ok(error.toString().includes("You're not the selected worker"))
     }
 
-    // workers[0] refund
-    await instance.refund(address, { from: workers[0], value: cpc_10 });
+    let balance_user1 = await utils.getBalance(address)
+    let balance_worker1 = await utils.getBalance(selected)
 
-    // worker[0] refund again
+    // selected refund
+    tx = await instance.refund(address, { from: selected, value: cpc_10 });
+
+    let gasUsed = await utils.getGasUsedInCPC(tx)
+
+    // Validate event
+    await utils.checkEvent(tx, utils.EVENT_REFUND_MONEY, async (ev)=> {
+      assert.equal(ev.worker, selected)
+      assert.equal(ev.addr, address)
+      assert.equal(ev.amount, cpc_10)
+
+      let balance_user2 = await utils.getBalance(address)
+      let balance_worker2 = await utils.getBalance(selected)
+
+      // balance1 + cpc_10 = balance2
+      assert.equal(utils.add(balance_user1, cpc_10), balance_user2, "User's balance should add 10 CPC")
+
+      // balance1 = balance2 + gasUsed + cpc_10
+      assert.equal(utils.add(balance_worker2, gasUsed).add(new BN(cpc_10)), balance_worker1, "The worker's balance is error")
+
+      // User's withdrawn account should be 0
+      await utils.checkWithdrawnBalance(instance, address, utils.cpc(0))
+    })
+
+    // selected refund again
     try {
-      await instance.refund(address, { from: workers[0], value: cpc_10 });
+      await instance.refund(address, { from: selected, value: cpc_10 });
       assert.fail();
     } catch (error) {
       assert.ok(
