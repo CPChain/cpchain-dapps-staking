@@ -1,3 +1,4 @@
+const truffleAssert = require("truffle-assertions");
 
 var BN = web3.utils.BN;
 
@@ -44,7 +45,7 @@ exports.getGasUsedInCPC = async (tx) => {
 }
 
 exports.checkBalance = async (address, expected) => {
-  assert.equal(await getBalance(address), expected, "Balance is error")
+  assert.equal(await web3.eth.getBalance(address), expected, "Balance is error")
 }
 
 exports.checkNormalBalance = async (instance, address, expected) => {
@@ -75,4 +76,16 @@ exports.checkAppealedBalance = async (instance, address, expected) => {
 
 exports.checkWorkerAddress = (expected, actual) => {
   assert.equal(expected, actual, "The selected worker is error")
+}
+
+exports.EVENT_DEPOSIT = "Deposit"
+exports.EVENT_WITHDRAW = "Withdraw"
+
+exports.checkEvent = async (tx, event, cb) => {
+  let result;
+  truffleAssert.eventEmitted(tx, event, (ev) => {
+    result = ev
+    return true
+  });
+  await cb(result)
 }
