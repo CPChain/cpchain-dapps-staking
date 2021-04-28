@@ -70,16 +70,39 @@ UnitTest list
 
 |#|Name|Done|
 |-|----|---|
-|1|矿工正常 Refund 一笔金额
-|2|矿工 Refund 给未进行提现的账户
-|3|矿工 Refund 一笔错误金额
-|4|矿工 Refund 给已 Refund 的账户
-|5|矿工超过 6 个块（7个块）后再 Refund，此时也可成功
-|6|矿工给已发起 Appeal 的账户进行 Refund，此时将失败
-|7|矿工给已成功 Appeal 的账户进行 Refund，此时将失败
+|1|矿工正常 Refund 一笔金额|Done
+|2|矿工 Refund 给未进行提现的账户|Done
+|3|矿工 Refund 一笔错误金额|Done
+|4|矿工 Refund 给已 Refund 的账户|Done
+|5|矿工超过 6 个块（7个块）后再 Refund，此时也可成功|Done
+|6|矿工给已发起 Appeal 的账户进行 Refund，此时将失败|Done
+|7|矿工给已成功 Appeal 的账户进行 Refund，此时将失败|Done
+|8|矿工 Refund 的时候，不打 CPC|Done
+|9|矿工以低金额进行 Refund|Done
+|10|矿工以高金额进行 Refund|Done
+|11|并非指定矿工进行 Refund，需失败|Done
 
 ## User Appeal and Admin Refund
 
+|#|Name|Done|
+|-|----|---|
+|1|用户 Deposit，后进行提取，worker 不 refund，用户发起 Appeal，检查是否成功发送事件
+|2|用户 Deposit，后进行提取，用户在 6 个块内发起 Appeal，需失败
+|3|用户 Deposit，6 个块后进行 Appeal，Admin 进行 Refund
+|4|Admin 重复 Refund
+|5|Admin Refund 一笔不存在的 Appeal
+|6|在 worker 已 Refund 的状态下，进行 Appeal
+
 ## Interest Stats
 
+|#|Name|Done|
+|-|----|---|
+|1|Admin在总账户为空时，进行利息统计分配，需失败
+|2|1位用户Deposit了 10 CPC，Admin 进行分配 100 CPC
+|3|7位用户各Deposit了 10 CPC，Admin 分配 13 CPC（检查这种情况下，是否正常分配，比例是否合理）
+
 ## Transfer
+
+|#|Name|Done|
+|-|----|---|
+|1|从A转钱到B，检查二者的账户
