@@ -233,6 +233,18 @@ contract("Staking", (accounts) => {
       "The withdraw_upper_limit should be 1200001 CPC"
     );
   });
+  it("enable and disbale", async ()=> {
+    const instance = await Staking.deployed();
+    assert.equal(await instance.enabled(), true)
+    await instance.disableContract()
+    assert.equal(await instance.enabled(), false)
+    await instance.enableContract()
+    assert.equal(await instance.enabled(), true)
+  })
+  it("refund to owner", async ()=> {
+    const instance = await Staking.deployed();
+    await instance.refundToOwner()
+  })
   it("change owner", async ()=> {
     const instance = await Staking.deployed();
     // change first

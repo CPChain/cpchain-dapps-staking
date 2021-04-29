@@ -97,12 +97,12 @@ UnitTest list
 
 |#|Name|Done|
 |-|----|---|
-|1|Admin在总账户为空时，进行利息统计分配，需失败
-|2|1位用户Deposit了 10 CPC，Admin 进行分配 100 CPC
+|1|Admin在总账户为空时，进行利息统计分配，需失败|Done
+|2|1位用户Deposit了 10 CPC，Admin 进行分配 10 CPC|Done
 |3|7位用户各Deposit了 10 CPC，Admin 分配 13 CPC（检查这种情况下，是否正常分配，比例是否合理）
 
-## Transfer
+## ERC20
 
 |#|Name|Done|
 |-|----|---|
-|1|从A转钱到B，检查二者的账户
+|1|从A转钱到B，检查二者的账户|Done

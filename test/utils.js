@@ -84,6 +84,14 @@ exports.EVENT_WITHDRAW = "Withdraw"
 
 exports.EVENT_REFUND_MONEY = "RefundMoney"
 
+exports.EVENT_APPEAL = "Appeal"
+
+exports.EVENT_ADMIN_APPEAL_REFUND = "AdminAppealRefund"
+
+exports.EVENT_STATS_INTEREST = "StatsInterest"
+
+exports.EVENT_TRANSFER = "Transfer"
+
 exports.checkEvent = async (tx, event, cb) => {
   let result;
   truffleAssert.eventEmitted(tx, event, (ev) => {
@@ -95,4 +103,16 @@ exports.checkEvent = async (tx, event, cb) => {
 
 exports.add = (a, b) => {
   return new BN(a).add(new BN(b))
+}
+
+exports.lastestBlockNumber = async () => {
+  return (await web3.eth.getBlock('latest')).number
+}
+
+exports.timeout = (ms) => {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+exports.checkInterest = async (instance, address, interest) => {
+  assert.equal(await instance.getInterest(address), interest, "Interest of address is error")
 }

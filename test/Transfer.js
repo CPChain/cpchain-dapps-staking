@@ -18,7 +18,20 @@ contract("Staking", (accounts) => {
     await instance.deposit({from: address2, value: cpc_10})
 
     // Stats Interest
-    await instance.transfer(address2, cpc_10, {from: address1})
+    let tx = await instance.transfer(address2, cpc_10, {from: address1})
+    await utils.checkEvent(tx, utils.EVENT_TRANSFER, async (e)=> {
+      assert.equal(e.from, address1)
+      assert.equal(e.to, address2)
+      assert.equal(e.value, cpc_10)
+    })
+
+    await utils.checkNormalBalance(instance, address1, '0')
+    await utils.checkNormalBalance(instance, address2, utils.cpc(20))
+
+    // Check balance with unexists account
+    await utils.checkNormalBalance(instance, accounts[9], '0')
+    await utils.checkWithdrawnBalance(instance, accounts[9], '0')
+    await utils.checkAppealedBalance(instance, accounts[9], '0')
 
   })
 })

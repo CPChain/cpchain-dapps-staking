@@ -12,3 +12,6 @@ test:
 build:
 	@mkdir -p build
 	@go build -o build/main cmd/main.go
+
+cloc:
+	@gocloc --not-match-d="coverage.*|node_modules" . 

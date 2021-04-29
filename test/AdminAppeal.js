@@ -1,5 +1,4 @@
 const Staking = artifacts.require("Staking");
-const truffleAssert = require("truffle-assertions");
 const utils = require("./utils")
 
 var BN = web3.utils.BN;
@@ -18,18 +17,31 @@ contract("Staking", (accounts) => {
     await instance.withdraw(web3.utils.toWei("1", "ether"), {from: address})
 
     // Stats Interest to generate 6 blocks
-    await instance.statsInterest(web3.utils.toWei("10", "ether"))
-    await instance.statsInterest(web3.utils.toWei("10", "ether"))
-    await instance.statsInterest(web3.utils.toWei("10", "ether"))
-    await instance.statsInterest(web3.utils.toWei("10", "ether"))
-    await instance.statsInterest(web3.utils.toWei("10", "ether"))
-    await instance.statsInterest(web3.utils.toWei("10", "ether"))
+    await instance.statsInterest(web3.utils.toWei("0", "ether"))
+    await instance.statsInterest(web3.utils.toWei("0", "ether"))
+    await instance.statsInterest(web3.utils.toWei("0", "ether"))
+    await instance.statsInterest(web3.utils.toWei("0", "ether"))
+    await instance.statsInterest(web3.utils.toWei("0", "ether"))
+    await instance.statsInterest(web3.utils.toWei("0", "ether"))
 
     // Appeal
-    await instance.appeal({from: address})
+    let tx = await instance.appeal({from: address})
+    await utils.checkEvent(tx, utils.EVENT_APPEAL, async (e) => {
+      assert.equal(e.value, utils.cpc(1))
+      assert.equal(e.account, address)
+    })
+
+    await utils.checkNormalBalance(instance, address, utils.cpc(9))
+    await utils.checkWithdrawnBalance(instance, address, '0')
+    await utils.checkAppealedBalance(instance, address, utils.cpc(1))
+
 
     // Admin refund
-    await instance.appealRefund(address, {value: web3.utils.toWei("1", "ether")})
+    tx = await instance.appealRefund(address, {value: web3.utils.toWei("1", "ether")})
+    await utils.checkEvent(tx, utils.EVENT_ADMIN_APPEAL_REFUND, async (e) => {
+      assert.equal(e.user, address)
+      assert.equal(e.amount, utils.cpc(1))
+    })
 
   })
 })
