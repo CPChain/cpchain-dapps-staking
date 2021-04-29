@@ -81,7 +81,7 @@ UnitTest list
 |9|矿工以低金额进行 Refund|Done
 |10|矿工以高金额进行 Refund|Done
 |11|并非指定矿工进行 Refund，需失败|Done
-|12|设置手续费为千分之五，进行提现，然后计算手续费是否正确
+|12|设置手续费为千分之五，进行提现，然后计算手续费是否正确|Done
 
 ## User Appeal and Admin Refund
 
@@ -93,7 +93,7 @@ UnitTest list
 |4|Admin 重复 Refund
 |5|Admin Refund 一笔不存在的 Appeal
 |6|在 worker 已 Refund 的状态下，进行 Appeal
-|7|设置手续费为千分之五，进行提现，然后计算手续费是否正确
+|7|设置手续费为千分之五，进行提现，然后计算手续费是否正确|Done
 
 ## Interest Stats
 

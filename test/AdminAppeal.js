@@ -48,7 +48,6 @@ contract("Staking", (accounts) => {
     const instance = await Staking.deployed();
     const cpc_10 = web3.utils.toWei("10", "ether");
     const address = accounts[5];
-    await utils.init_workers(workers, instance);
 
     // 设置手续费为 50/10000，即千分之五
     await instance.setWithdrawFee(50);
@@ -74,10 +73,6 @@ contract("Staking", (accounts) => {
       assert.equal(e.account, address);
     });
 
-    await utils.checkNormalBalance(instance, address, utils.cpc(9));
-    await utils.checkWithdrawnBalance(instance, address, "0");
-    await utils.checkAppealedBalance(instance, address, utils.cpc(1));
-
     // Admin refund
     let userBalance1 = new BN(await utils.getBalance(address))
     let adminBalance1 = new BN(await utils.getBalance(accounts[0]))
@@ -99,7 +94,8 @@ contract("Staking", (accounts) => {
 
     await utils.checkEvent(tx, utils.EVENT_ADMIN_APPEAL_REFUND, async (e) => {
       assert.equal(e.user, address);
-      assert.equal(e.amount, utils.cpc(1));
+      assert.equal(e.amount.toString(), utils.cpc(0.995).toString());
+      assert.equal(e.fee.toString(), fee.toString())
     });
   });
 });
