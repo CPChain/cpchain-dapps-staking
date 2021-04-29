@@ -260,7 +260,7 @@ contract("Staking", (accounts) => {
       await instance.appeal({from: address})
       assert.fail()
     } catch(error) {
-      assert.ok(error.toString().includes("You haven't a unhandled withdrawn transaction"))
+      assert.ok(error.toString().includes("You haven't an unhandled withdrawn transaction"))
     }
   });
   it("Withdraw with fee", async ()=> {

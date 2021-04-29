@@ -129,8 +129,8 @@ contract Staking is IAdmin, IStaking, IWorker {
         require(amount <= withdraw_upper_limit, "Amount greater than the upper limit");
         require(users_list.contains(msg.sender), "You did't deposit money");
         require(amount <= users[msg.sender].balance, "Amount greater than deposited money");
-        require(users[msg.sender].withdrawnBalance == 0, "You have a unhandled withdrawn transaction");
-        require(users[msg.sender].appealedBalance == 0, "You have a unhandled appealed transaction");
+        require(users[msg.sender].withdrawnBalance == 0, "You have an unhandled withdrawn transaction");
+        require(users[msg.sender].appealedBalance == 0, "You have an unhandled appealed transaction");
         // select worker
         address[] memory items = workers_list.getAll();
         address selected = items[0];
@@ -161,9 +161,9 @@ contract Staking is IAdmin, IStaking, IWorker {
      */
     function appeal() external onlyEnabled {
         require(users_list.contains(msg.sender), "You did't deposit money");
-        require(users[msg.sender].appealedBalance == 0, "You have a unhandled appealed transaction");
-        require(users[msg.sender].withdrawnBalance > 0, "You haven't a unhandled withdrawn transaction");
-        require(block.number - users[msg.sender].lastWithdrawnHeight >= 6, "You can't appeal until there are 6 blocks that have been generated after withdrew");
+        require(users[msg.sender].appealedBalance == 0, "You have an unhandled appealed transaction");
+        require(users[msg.sender].withdrawnBalance > 0, "You haven't an unhandled withdrawn transaction");
+        require(block.number - users[msg.sender].lastWithdrawnHeight > 6, "You can't appeal until there are 6 blocks that have been generated after withdrew");
         users[msg.sender].appealedBalance = users[msg.sender].withdrawnBalance;
         users[msg.sender].withdrawnBalance = 0;
         emit Appeal(msg.sender, users[msg.sender].appealedBalance, block.number);
@@ -230,7 +230,7 @@ contract Staking is IAdmin, IStaking, IWorker {
      */
     function refund(address addr) external payable {
         require(workers_list.contains(msg.sender), "You're not a worker");
-        require(users_list.contains(addr), "The addr is not an user");
+        require(users_list.contains(addr), "The addr is not a user");
         require(users[addr].withdrawnBalance > 0, "The withdrawn balance should greater than 0");
         require(users[addr].withdrawnBalance == msg.value, "The value is not equal to the withdrawn balance");
         require(users[addr].lastSelectedWorker == msg.sender, "You're not the selected worker");
@@ -381,10 +381,10 @@ contract Staking is IAdmin, IStaking, IWorker {
      * Emits a {AdminAppealRefund} event.
      */
     function appealRefund(address addr) payable external onlyOwner onlyEnabled {
-        require(users_list.contains(addr), "The addr is not an user");
-        require(users[addr].appealedBalance > 0, "The withdrawn balane should greater than 0");
-        require(users[addr].appealedBalance == msg.value, "The value is not equal to the withdrawn balance");
-        require(block.number - users[addr].lastWithdrawnHeight >= 6, "You can't appeal until there are 6 blocks that have been generated after withdrew");
+        require(users_list.contains(addr), "This address is not a user");
+        require(users[addr].appealedBalance > 0, "The appealed balance should greater than 0");
+        require(users[addr].appealedBalance == msg.value, "The value is not equal to the appealed balance");
+        require(block.number - users[addr].lastWithdrawnHeight > 6, "You can't appeal until there are 6 blocks that have been generated after withdrew");
         users[addr].appealedBalance = 0;
         // 给 admin 相应的手续费
         uint256 value = msg.value;

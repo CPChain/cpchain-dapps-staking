@@ -237,7 +237,7 @@ contract("Staking", (accounts) => {
       assert.fail();
     } catch (error) {
       assert.ok(
-        error.toString().includes("You have a unhandled withdrawn transaction")
+        error.toString().includes("You have an unhandled withdrawn transaction")
       );
     }
   });

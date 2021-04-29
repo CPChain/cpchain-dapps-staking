@@ -87,12 +87,12 @@ UnitTest list
 
 |#|Name|Done|
 |-|----|---|
-|1|用户 Deposit，后进行提取，worker 不 refund，用户发起 Appeal，检查是否成功发送事件
-|2|用户 Deposit，后进行提取，用户在 6 个块内发起 Appeal，需失败
-|3|用户 Deposit，6 个块后进行 Appeal，Admin 进行 Refund
-|4|Admin 重复 Refund
-|5|Admin Refund 一笔不存在的 Appeal
-|6|在 worker 已 Refund 的状态下，进行 Appeal
+|1|用户 Deposit，后进行提取，worker 不 refund，用户发起 Appeal，检查是否成功发送事件|Done
+|2|用户 Deposit，后进行提取，用户在 6 个块内发起 Appeal，需失败|Done
+|3|用户 Deposit，6 个块后进行 Appeal，Admin 进行 Refund|Done
+|4|Admin 重复 Refund|Done
+|5|Admin Refund 一笔不存在的 Appeal|Done
+|6|在 worker 已 Refund 的状态下，进行 Appeal|Done
 |7|设置手续费为千分之五，进行提现，然后计算手续费是否正确|Done
 
 ## Interest Stats

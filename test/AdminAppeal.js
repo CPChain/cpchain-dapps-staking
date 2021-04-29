@@ -43,6 +43,22 @@ contract("Staking", (accounts) => {
       assert.equal(e.user, address);
       assert.equal(e.amount, utils.cpc(1));
     });
+
+    // Admin refund again
+    try {
+      await instance.appealRefund(address, {value: utils.cpc(1)})
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("The appealed balance should greater than 0"))
+    }
+
+    // Admin refund a unexists appeal
+    try {
+      await instance.appealRefund(accounts[9], {value: utils.cpc(1)})
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("This address is not a user"))
+    }
   });
   it("Admin appeal refund with fee", async () => {
     const instance = await Staking.deployed();
@@ -97,5 +113,62 @@ contract("Staking", (accounts) => {
       assert.equal(e.amount.toString(), utils.cpc(0.995).toString());
       assert.equal(e.fee.toString(), fee.toString())
     });
+  });
+  it("User appeal before 6 blocks", async () => {
+    const instance = await Staking.deployed();
+    const cpc_10 = web3.utils.toWei("10", "ether");
+    const address = accounts[9];
+    // Deposit
+    await instance.deposit({ from: address, value: cpc_10 });
+
+    // Withdraw
+    await instance.withdraw(web3.utils.toWei("1", "ether"), { from: address });
+
+    // Stats Interest to generate 6 blocks
+    await instance.statsInterest(web3.utils.toWei("0", "ether"));
+    await instance.statsInterest(web3.utils.toWei("0", "ether"));
+    await instance.statsInterest(web3.utils.toWei("0", "ether"));
+    await instance.statsInterest(web3.utils.toWei("0", "ether"));
+    await instance.statsInterest(web3.utils.toWei("0", "ether"));
+
+    // Appeal
+    try {
+      await instance.appeal({ from: address });
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("You can't appeal until there are 6 blocks that have been generated after withdrew"))
+    }
+  });
+  it("User appeal after refund", async () => {
+    const instance = await Staking.deployed();
+    const cpc_10 = web3.utils.toWei("10", "ether");
+    const address = accounts[8];
+    // Deposit
+    await instance.deposit({ from: address, value: cpc_10 });
+
+    // Withdraw
+    let tx = await instance.withdraw(web3.utils.toWei("1", "ether"), { from: address });
+    let e = await utils.getEvent(tx, utils.EVENT_WITHDRAW)
+    let selectedWorker = e.selectedWorker
+
+    // Stats Interest to generate 6 blocks
+    await instance.statsInterest(web3.utils.toWei("0", "ether"));
+    await instance.statsInterest(web3.utils.toWei("0", "ether"));
+    await instance.statsInterest(web3.utils.toWei("0", "ether"));
+    await instance.statsInterest(web3.utils.toWei("0", "ether"));
+    await instance.statsInterest(web3.utils.toWei("0", "ether"));
+    await instance.statsInterest(web3.utils.toWei("0", "ether"));
+
+    // Worker refund
+    await instance.refund(address, {from: selectedWorker, value: utils.cpc(1)})
+
+    // Appeal after refund
+    try {
+      await instance.appeal({ from: address });
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("You haven't an unhandled withdrawn transaction"))
+    }
+
   });
 });
