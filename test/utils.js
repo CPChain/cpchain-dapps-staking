@@ -116,3 +116,12 @@ exports.timeout = (ms) => {
 exports.checkInterest = async (instance, address, interest) => {
   assert.equal(await instance.getInterest(address), interest, "Interest of address is error")
 }
+
+exports.getEvent = (tx, event) => {
+  let result;
+  truffleAssert.eventEmitted(tx, event, (ev) => {
+    result = ev
+    return true
+  });
+  return result
+}

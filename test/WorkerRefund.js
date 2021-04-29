@@ -263,4 +263,38 @@ contract("Staking", (accounts) => {
       assert.ok(error.toString().includes("You haven't a unhandled withdrawn transaction"))
     }
   });
+  it("Withdraw with fee", async ()=> {
+    const instance = await Staking.deployed();
+    const address = accounts[9]
+
+    // 设置手续费为 50/10000，即千分之五
+    await instance.setWithdrawFee(50)
+
+    // deposit 10 CPC
+    await instance.deposit({from: address, value: utils.cpc(10)})
+
+    // Withdraw 8 CPC
+    let tx = await instance.withdraw(utils.cpc(8), {from: address})
+    
+    let e = utils.getEvent(tx, utils.EVENT_WITHDRAW)
+    let selected = e.selectedWorker
+    
+    // Worker refund
+    let userBalance1 = await utils.getBalance(address)
+    let workerBalance1 = await utils.getBalance(selected)
+    
+    tx = await instance.refund(address, {from: selected, value: utils.cpc(8)})
+    
+    let txGasUsed = await utils.getGasUsedInCPC(tx)
+    let userBalance2 = await utils.getBalance(address)
+    let workerBalance2 = await utils.getBalance(selected)
+
+    // User will get 7.96 CPC
+    assert.equal(new BN(userBalance2).sub(new BN(userBalance1)).toString(), utils.cpc(7.96), "User's balance is error")
+
+    // Worker will get 0.04 CPC
+    assert.equal(new BN(workerBalance2).add(new BN(txGasUsed)).add(new BN(utils.cpc(8))).toString(), 
+      new BN(workerBalance1).add(new BN(utils.cpc(0.04))).toString(), "Worker's balance is error")
+
+  })
 })

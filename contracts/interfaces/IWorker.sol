@@ -4,7 +4,7 @@ interface IWorker {
     /**
      * Emitted when worker refund money.
      */
-    event RefundMoney(address worker, address addr, uint256 amount);
+    event RefundMoney(address worker, address addr, uint256 amount, uint256 fee);
 
     /**
      * Worker refund money to user when user submit withdraw request.

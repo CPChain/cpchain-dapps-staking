@@ -19,7 +19,7 @@ interface IAdmin {
     /**
      * Emitted when admin refund.
      */
-    event AdminAppealRefund(address user, uint256 amount);
+    event AdminAppealRefund(address user, uint256 amount, uint256 fee);
 
     /**
      * Add new worker to the system.

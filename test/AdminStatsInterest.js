@@ -36,6 +36,5 @@ contract("Staking", (accounts) => {
 
     // check interest with an unexists account
     await utils.checkInterest(instance, accounts[9], utils.cpc(0))
-
   });
 });

@@ -234,11 +234,18 @@ contract Staking is IAdmin, IStaking, IWorker {
         require(users[addr].withdrawnBalance > 0, "The withdrawn balance should greater than 0");
         require(users[addr].withdrawnBalance == msg.value, "The value is not equal to the withdrawn balance");
         require(users[addr].lastSelectedWorker == msg.sender, "You're not the selected worker");
-        addr.transfer(msg.value);
         users[addr].withdrawnBalance = 0;
         workers[msg.sender].balance = workers[msg.sender].balance.sub(msg.value);
-        // TODO 给 worker 相应的手续费
-        emit RefundMoney(msg.sender, addr, msg.value); 
+        // 给 worker 相应的手续费
+        uint256 value = msg.value;
+        uint256 fee = 0;
+        if (withdraw_fee_numerator > 0) {
+            fee = value.mul(withdraw_fee_numerator).div(withdraw_fee_denominator);
+            msg.sender.transfer(fee);
+            value = value.sub(fee);
+        }
+        addr.transfer(value);
+        emit RefundMoney(msg.sender, addr, value, fee); 
     }
 
     // Admin
@@ -378,10 +385,17 @@ contract Staking is IAdmin, IStaking, IWorker {
         require(users[addr].appealedBalance > 0, "The withdrawn balane should greater than 0");
         require(users[addr].appealedBalance == msg.value, "The value is not equal to the withdrawn balance");
         require(block.number - users[addr].lastWithdrawnHeight >= 6, "You can't appeal until there are 6 blocks that have been generated after withdrew");
-        addr.transfer(msg.value);
         users[addr].appealedBalance = 0;
-        // TODO 给 admin 相应的手续费
-        emit AdminAppealRefund(addr, msg.value);
+        // 给 admin 相应的手续费
+        uint256 value = msg.value;
+        uint256 fee = 0;
+        if (withdraw_fee_numerator > 0) {
+            fee = value.mul(withdraw_fee_numerator).div(withdraw_fee_denominator);
+            msg.sender.transfer(fee);
+            value = value.sub(fee);
+        }
+        addr.transfer(value);
+        emit AdminAppealRefund(addr, value, fee);
     }
 
     /**
