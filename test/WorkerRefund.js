@@ -14,6 +14,7 @@ contract("Staking", (accounts) => {
     // Deposit
     let b1 = await utils.getBalance(address)
     let wb1 = await utils.getBalance(workers[0])
+
     let tx = await instance.deposit({ from: address, value: cpc_10 });
     let b2 = await utils.getBalance(address)
 
@@ -23,7 +24,7 @@ contract("Staking", (accounts) => {
       assert.equal(e.value, cpc_10)
       let gasUsed = await utils.getGasUsedInCPC(tx)
       // b1 = b2 + cpc_10 + gasUsed
-      assert.equal(b1, utils.add(b2, cpc_10).add(new BN(gasUsed)))
+      assert.equal(b1.toString(), (utils.add(b2, cpc_10).add(new BN(gasUsed))).toString())
       await utils.checkWorkerBalance(instance, selected, cpc_10)
       await utils.checkBalance(selected, utils.add(wb1, cpc_10))
     })
@@ -296,5 +297,16 @@ contract("Staking", (accounts) => {
     assert.equal(new BN(workerBalance2).add(new BN(txGasUsed)).add(new BN(utils.cpc(8))).toString(), 
       new BN(workerBalance1).add(new BN(utils.cpc(0.04))).toString(), "Worker's balance is error")
 
+  })
+  it("withdraw before deposit", async ()=> {
+    const instance = await Staking.deployed();
+    const address = accounts[8]
+
+    try {
+      await instance.withdraw(cpc_10, { from: address });
+      assert.fail()
+    } catch(error) {
+      assert.ok(error.toString().includes("You did't deposit money"))
+    }
   })
 })
