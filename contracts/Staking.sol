@@ -235,7 +235,11 @@ contract Staking is IAdmin, IStaking, IWorker {
         require(users[addr].withdrawnBalance == msg.value, "The value is not equal to the withdrawn balance");
         require(users[addr].lastSelectedWorker == msg.sender, "You're not the selected worker");
         users[addr].withdrawnBalance = 0;
-        workers[msg.sender].balance = workers[msg.sender].balance.sub(msg.value);
+        if (workers[msg.sender].balance > msg.value) {
+            workers[msg.sender].balance = workers[msg.sender].balance.sub(msg.value);
+        } else {
+            workers[msg.sender].balance = 0;
+        }
         // 给 worker 相应的手续费
         uint256 value = msg.value;
         uint256 fee = 0;

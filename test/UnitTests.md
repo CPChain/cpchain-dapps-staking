@@ -101,7 +101,8 @@ UnitTest list
 |-|----|---|
 |1|Admin在总账户为空时，进行利息统计分配，需失败|Done
 |2|1位用户Deposit了 10 CPC，Admin 进行分配 10 CPC|Done
-|3|7位用户各Deposit了 10 CPC，Admin 分配 13 CPC（检查这种情况下，是否正常分配，比例是否合理）
+|3|7位用户各Deposit了 10 CPC，最后一个多存储了 10 CPC，Admin 分配 13 CPC（检查这种情况下，是否正常分配，比例是否合理）|Done
+|4|存入 10 CPC，分配 5 CPC，然后提取 15 CPC，需能正常发出事件|Done
 
 ## ERC20
 
