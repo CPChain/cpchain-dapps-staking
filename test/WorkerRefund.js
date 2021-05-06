@@ -296,17 +296,5 @@ contract("Staking", (accounts) => {
     // Worker will get 0.04 CPC
     assert.equal(new BN(workerBalance2).add(new BN(txGasUsed)).add(new BN(utils.cpc(8))).toString(), 
       new BN(workerBalance1).add(new BN(utils.cpc(0.04))).toString(), "Worker's balance is error")
-
-  })
-  it("withdraw before deposit", async ()=> {
-    const instance = await Staking.deployed();
-    const address = accounts[8]
-
-    try {
-      await instance.withdraw(cpc_10, { from: address });
-      assert.fail()
-    } catch(error) {
-      assert.ok(error.toString().includes("You did't deposit money"))
-    }
   })
 })

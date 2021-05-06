@@ -210,6 +210,8 @@ contract("Staking", (accounts) => {
       );
     }
 
+    await utils.checkNormalBalance(instance, address, utils.cpc(30));
+
     // Withdraw 10 CPC
     let tx = await instance.withdraw(utils.cpc(10), { from: address });
 
@@ -241,4 +243,8 @@ contract("Staking", (accounts) => {
       );
     }
   });
+  it("check total balance", async ()=> {
+    const instance = await Staking.deployed();
+    assert.equal((await instance.total_balance()).toString(), (await instance.totalSupply()).toString())
+  })
 });

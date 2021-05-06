@@ -17,10 +17,11 @@ contract Staking is IAdmin, IStaking, IWorker {
     // workers
     struct Worker {
         uint256 balance;
+        uint256 interest;
         bool existed;
     }
 
-    mapping(address=>Worker) internal workers;
+    mapping(address => Worker) internal workers;
     Set.Data private workers_list; // for iterations.
 
     // users
@@ -33,7 +34,7 @@ contract Staking is IAdmin, IStaking, IWorker {
         uint256 interest; // interest amount
     }
 
-    mapping(address=>User) internal users;
+    mapping(address => User) internal users;
     Set.Data private users_list; // for iterations.
 
     // paramaeters
@@ -48,12 +49,22 @@ contract Staking is IAdmin, IStaking, IWorker {
 
     // stats
     uint256 public total_balance = 0;
+    uint256 public workers_total_balance = 0;
 
-    modifier onlyOwner() {require(msg.sender == owner, "You're not the owner of this contract");_;}
-    modifier onlyEnabled() {require(enabled);_;}
-    modifier haveWorkers() {require(workers_list.getAll().length > 0, "There are no workers now");_;}
+    modifier onlyOwner() {
+        require(msg.sender == owner, "You're not the owner of this contract");
+        _;
+    }
+    modifier onlyEnabled() {
+        require(enabled);
+        _;
+    }
+    modifier haveWorkers() {
+        require(workers_list.getAll().length > 0, "There are no workers now");
+        _;
+    }
 
-    constructor () public {
+    constructor() public {
         owner = msg.sender;
     }
 
@@ -68,8 +79,10 @@ contract Staking is IAdmin, IStaking, IWorker {
 
     // judge if an address is a contract address
     function isContract(address addr) public view returns (bool) {
-        uint size;
-        assembly { size := extcodesize(addr) }
+        uint256 size;
+        assembly {
+            size := extcodesize(addr)
+        }
         return size > 0;
     }
 
@@ -80,13 +93,22 @@ contract Staking is IAdmin, IStaking, IWorker {
      * If the user's withdrawn account has money, he can't deposit.
      * Emits a {Deposit} event.
      */
-    function deposit() payable external onlyEnabled haveWorkers {
-        require(msg.value >= tx_lower_limit, "Amount less than the lower limit");
-        require(msg.value <= tx_upper_limit, "Amount greater than the upper limit");
-        if(users_list.contains(msg.sender)) {
+    function deposit() external payable onlyEnabled haveWorkers {
+        require(
+            msg.value >= tx_lower_limit,
+            "Amount less than the lower limit"
+        );
+        require(
+            msg.value <= tx_upper_limit,
+            "Amount greater than the upper limit"
+        );
+        if (users_list.contains(msg.sender)) {
             // check the upper limit
             uint256 balance = users[msg.sender].balance + msg.value;
-            require(balance <= user_balance_limit, "User's balance greater than the upper limit");
+            require(
+                balance <= user_balance_limit,
+                "User's balance greater than the upper limit"
+            );
         } else {
             users[msg.sender].balance = 0;
             users_list.insert(msg.sender);
@@ -94,17 +116,20 @@ contract Staking is IAdmin, IStaking, IWorker {
         // select worker, find the minest account
         address[] memory items = workers_list.getAll();
         address selected = items[0];
-        for(uint i = 1; i < items.length; i++) {
+        for (uint256 i = 1; i < items.length; i++) {
             if (workers[items[i]].balance < workers[selected].balance) {
                 selected = items[i];
             }
         }
         // check upper limit of the worker
-        require((workers[selected].balance + msg.value) < worker_balance_limit, "Amount greater than worker's upper limit");
+        require(
+            (workers[selected].balance + msg.value) < worker_balance_limit,
+            "Amount greater than worker's upper limit"
+        );
 
         // transfer
         selected.transfer(msg.value);
-        
+
         // worker balance
         workers[selected].balance = workers[selected].balance.add(msg.value);
 
@@ -113,6 +138,7 @@ contract Staking is IAdmin, IStaking, IWorker {
 
         // total
         total_balance += msg.value;
+        workers_total_balance += msg.value;
 
         // emit event
         emit Deposit(msg.sender, selected, msg.value);
@@ -125,16 +151,31 @@ contract Staking is IAdmin, IStaking, IWorker {
      * Emits a {Withdraw} event.
      */
     function withdraw(uint256 amount) external onlyEnabled haveWorkers {
-        require(amount >= 1 ether, "Amount need to greater than or equal to 1 CPC");
-        require(amount <= withdraw_upper_limit, "Amount greater than the upper limit");
+        require(
+            amount >= 1 ether,
+            "Amount need to greater than or equal to 1 CPC"
+        );
+        require(
+            amount <= withdraw_upper_limit,
+            "Amount greater than the upper limit"
+        );
         require(users_list.contains(msg.sender), "You did't deposit money");
-        require(amount <= users[msg.sender].balance, "Amount greater than deposited money");
-        require(users[msg.sender].withdrawnBalance == 0, "You have an unhandled withdrawn transaction");
-        require(users[msg.sender].appealedBalance == 0, "You have an unhandled appealed transaction");
+        require(
+            amount <= users[msg.sender].balance,
+            "Amount greater than deposited money"
+        );
+        require(
+            users[msg.sender].withdrawnBalance == 0,
+            "You have an unhandled withdrawn transaction"
+        );
+        require(
+            users[msg.sender].appealedBalance == 0,
+            "You have an unhandled appealed transaction"
+        );
         // select worker
         address[] memory items = workers_list.getAll();
         address selected = items[0];
-        for(uint i = 1; i < items.length; i++) {
+        for (uint256 i = 1; i < items.length; i++) {
             if (workers[items[i]].balance > workers[selected].balance) {
                 selected = items[i];
             }
@@ -154,26 +195,39 @@ contract Staking is IAdmin, IStaking, IWorker {
     }
 
     /**
-     * When the user's withdrawn account has money, 
-     * and the block height minus withdrawn height greater than 6, 
+     * When the user's withdrawn account has money,
+     * and the block height minus withdrawn height greater than 6,
      * the user can submit an appeal.
      * Emits an {Appeal} event.
      */
     function appeal() external onlyEnabled {
         require(users_list.contains(msg.sender), "You did't deposit money");
-        require(users[msg.sender].appealedBalance == 0, "You have an unhandled appealed transaction");
-        require(users[msg.sender].withdrawnBalance > 0, "You haven't an unhandled withdrawn transaction");
-        require(block.number - users[msg.sender].lastWithdrawnHeight > 6, "You can't appeal until there are 6 blocks that have been generated after withdrew");
+        require(
+            users[msg.sender].appealedBalance == 0,
+            "You have an unhandled appealed transaction"
+        );
+        require(
+            users[msg.sender].withdrawnBalance > 0,
+            "You haven't an unhandled withdrawn transaction"
+        );
+        require(
+            block.number - users[msg.sender].lastWithdrawnHeight > 6,
+            "You can't appeal until there are 6 blocks that have been generated after withdrew"
+        );
         users[msg.sender].appealedBalance = users[msg.sender].withdrawnBalance;
         users[msg.sender].withdrawnBalance = 0;
-        emit Appeal(msg.sender, users[msg.sender].appealedBalance, block.number);
+        emit Appeal(
+            msg.sender,
+            users[msg.sender].appealedBalance,
+            block.number
+        );
     }
 
     /**
      * Returns the amount of balance owned by `account`.
      */
     function balanceOf(address account) external view returns (uint256) {
-        if(!users_list.contains(account)) {
+        if (!users_list.contains(account)) {
             return 0;
         }
         return users[account].balance;
@@ -182,8 +236,12 @@ contract Staking is IAdmin, IStaking, IWorker {
     /**
      * Returns the amount of withdrawn balance owned by `account`.
      */
-    function getWithdrawnBalance(address account) external view returns (uint256) {
-        if(!users_list.contains(account)) {
+    function getWithdrawnBalance(address account)
+        external
+        view
+        returns (uint256)
+    {
+        if (!users_list.contains(account)) {
             return 0;
         }
         return users[account].withdrawnBalance;
@@ -192,8 +250,12 @@ contract Staking is IAdmin, IStaking, IWorker {
     /**
      * Returns the amount of appealed balance owned by `account`.
      */
-    function getAppealedBalance(address account) external view returns (uint256) {
-        if(!users_list.contains(account)) {
+    function getAppealedBalance(address account)
+        external
+        view
+        returns (uint256)
+    {
+        if (!users_list.contains(account)) {
             return 0;
         }
         return users[account].appealedBalance;
@@ -203,7 +265,7 @@ contract Staking is IAdmin, IStaking, IWorker {
      * Returns the amount of interest owned by `account`.
      */
     function getInterest(address account) external view returns (uint256) {
-        if(!users_list.contains(account)) {
+        if (!users_list.contains(account)) {
             return 0;
         }
         return users[account].interest;
@@ -215,12 +277,20 @@ contract Staking is IAdmin, IStaking, IWorker {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) external onlyEnabled returns (bool) {
+    function transfer(address recipient, uint256 amount)
+        external
+        onlyEnabled
+        returns (bool)
+    {
         require(users_list.contains(msg.sender), "You haven't deposited money");
-        require(users[msg.sender].balance >= amount, "You balance is less than value");
+        require(
+            users[msg.sender].balance >= amount,
+            "You balance is less than value"
+        );
         users[recipient].balance += amount;
         users[msg.sender].balance -= amount;
         emit Transfer(msg.sender, recipient, amount);
+        return true;
     }
 
     // Worker
@@ -231,12 +301,23 @@ contract Staking is IAdmin, IStaking, IWorker {
     function refund(address addr) external payable {
         require(workers_list.contains(msg.sender), "You're not a worker");
         require(users_list.contains(addr), "The addr is not a user");
-        require(users[addr].withdrawnBalance > 0, "The withdrawn balance should greater than 0");
-        require(users[addr].withdrawnBalance == msg.value, "The value is not equal to the withdrawn balance");
-        require(users[addr].lastSelectedWorker == msg.sender, "You're not the selected worker");
+        require(
+            users[addr].withdrawnBalance > 0,
+            "The withdrawn balance should greater than 0"
+        );
+        require(
+            users[addr].withdrawnBalance == msg.value,
+            "The value is not equal to the withdrawn balance"
+        );
+        require(
+            users[addr].lastSelectedWorker == msg.sender,
+            "You're not the selected worker"
+        );
         users[addr].withdrawnBalance = 0;
         if (workers[msg.sender].balance > msg.value) {
-            workers[msg.sender].balance = workers[msg.sender].balance.sub(msg.value);
+            workers[msg.sender].balance = workers[msg.sender].balance.sub(
+                msg.value
+            );
         } else {
             workers[msg.sender].balance = 0;
         }
@@ -244,12 +325,18 @@ contract Staking is IAdmin, IStaking, IWorker {
         uint256 value = msg.value;
         uint256 fee = 0;
         if (withdraw_fee_numerator > 0) {
-            fee = value.mul(withdraw_fee_numerator).div(withdraw_fee_denominator);
+            fee = value.mul(withdraw_fee_numerator).div(
+                withdraw_fee_denominator
+            );
             msg.sender.transfer(fee);
             value = value.sub(fee);
         }
         addr.transfer(value);
-        emit RefundMoney(msg.sender, addr, value, fee); 
+
+        // stats
+        workers_total_balance = workers_total_balance.sub(msg.value);
+
+        emit RefundMoney(msg.sender, addr, value, fee);
     }
 
     // Admin
@@ -261,11 +348,11 @@ contract Staking is IAdmin, IStaking, IWorker {
      */
     function addWorker(address account) external onlyOwner onlyEnabled {
         require(!workers[account].existed, "The worker has already existed!");
-        workers[account] = Worker({balance: 0, existed: true});
+        workers[account] = Worker({balance: 0, existed: true, interest: 0});
         workers_list.insert(account);
         emit AddWorker(account);
     }
-    
+
     /**
      * Remove a existed worker from system.
      * Returns a boolean value indicating whether the operation succeeded.
@@ -288,7 +375,7 @@ contract Staking is IAdmin, IStaking, IWorker {
     /**
      * Count of all workers
      */
-    function workersCnt() external view returns (uint) {
+    function workersCnt() external view returns (uint256) {
         return workers_list.getAll().length;
     }
 
@@ -300,43 +387,83 @@ contract Staking is IAdmin, IStaking, IWorker {
         return workers[account].balance;
     }
 
+    function getWorkerInterest(address worker) external view returns (uint256) {
+        return workers[worker].interest;
+    }
+
     /**
      * Stats the interest that all workers earned yesterday and distributed by the ratio of balance of all addresses.
      * Returns a boolean value indicating whether the operation succeeded.
      * Emits a {StatsInterest} event.
      */
-    function statsInterest(uint256 all_interest) external onlyOwner onlyEnabled {
+    function statsInterest(uint256 all_interest)
+        external
+        onlyOwner
+        onlyEnabled
+    {
         require(total_balance > 0, "The total balance is empty now");
         address[] memory items = users_list.getAll();
-        for(uint i = 0; i < items.length; i++) {
-            uint256 interest = all_interest.mul(users[items[i]].balance).div(total_balance);
+        // users
+        uint256 before_total = total_balance;
+        for (uint256 i = 0; i < items.length; i++) {
+            uint256 interest =
+                all_interest.mul(users[items[i]].balance).div(before_total);
             users[items[i]].balance = users[items[i]].balance.add(interest);
             users[items[i]].interest = users[items[i]].interest.add(interest);
             total_balance = total_balance.add(interest);
         }
-        emit StatsInterest(all_interest, total_balance, items.length, block.number);
+        // workers
+        before_total = workers_total_balance;
+        address[] memory worker_items = workers_list.getAll();
+        for (uint256 j = 0; j < worker_items.length; j++) {
+            address current = worker_items[j];
+            uint256 worker_interest = all_interest.mul(workers[current].balance).div(before_total);
+            workers[current].balance = workers[current].balance.add(worker_interest);
+            workers[current].interest = workers[current].interest.add(worker_interest);
+            workers_total_balance = workers_total_balance.add(worker_interest);
+        }
+        emit StatsInterest(
+            all_interest,
+            total_balance,
+            items.length,
+            block.number
+        );
     }
 
     /**
      * Set the fee when withdraw money. The unit of the param is 1/10000. And the param should greater than 0 and less than 100 (0 - 1%)
      */
     function setWithdrawFee(uint256 fee) external onlyOwner onlyEnabled {
-        require(fee <= 100, "The fee should greater than 0 and less than 100 (0 - 1%)");
+        require(
+            fee <= 100,
+            "The fee should greater than 0 and less than 100 (0 - 1%)"
+        );
         withdraw_fee_numerator = fee;
     }
 
     /**
      * Set the upper limit when withdraw
      */
-    function setWithdrawnUpperLimit(uint256 limit) external onlyOwner onlyEnabled {
-        require(limit >= 1 ether, "The upper limit should be greater than 1 CPC");
+    function setWithdrawnUpperLimit(uint256 limit)
+        external
+        onlyOwner
+        onlyEnabled
+    {
+        require(
+            limit >= 1 ether,
+            "The upper limit should be greater than 1 CPC"
+        );
         withdraw_upper_limit = limit;
     }
 
     /**
      * Set the upper limit of worker's balance.
      */
-    function setWorkerBalanceLimit(uint256 limit) external onlyOwner onlyEnabled {
+    function setWorkerBalanceLimit(uint256 limit)
+        external
+        onlyOwner
+        onlyEnabled
+    {
         require(limit >= 1 ether, "The upper limit should greater than 1 CPC");
         worker_balance_limit = limit;
     }
@@ -373,7 +500,7 @@ contract Staking is IAdmin, IStaking, IWorker {
      * Change the owner of the contract. If the address is a contract, the contract should be IAdmin.
      */
     function changeOwner(address new_owner) external onlyOwner onlyEnabled {
-        if(isContract(new_owner)) {
+        if (isContract(new_owner)) {
             require(allowOwnerBeContract, "Don't allow contract be the owner");
         }
         owner = new_owner;
@@ -384,17 +511,28 @@ contract Staking is IAdmin, IStaking, IWorker {
      * Admin call this function to refund.
      * Emits a {AdminAppealRefund} event.
      */
-    function appealRefund(address addr) payable external onlyOwner onlyEnabled {
+    function appealRefund(address addr) external payable onlyOwner onlyEnabled {
         require(users_list.contains(addr), "This address is not a user");
-        require(users[addr].appealedBalance > 0, "The appealed balance should greater than 0");
-        require(users[addr].appealedBalance == msg.value, "The value is not equal to the appealed balance");
-        require(block.number - users[addr].lastWithdrawnHeight > 6, "You can't appeal until there are 6 blocks that have been generated after withdrew");
+        require(
+            users[addr].appealedBalance > 0,
+            "The appealed balance should greater than 0"
+        );
+        require(
+            users[addr].appealedBalance == msg.value,
+            "The value is not equal to the appealed balance"
+        );
+        require(
+            block.number - users[addr].lastWithdrawnHeight > 6,
+            "You can't appeal until there are 6 blocks that have been generated after withdrew"
+        );
         users[addr].appealedBalance = 0;
         // 给 admin 相应的手续费
         uint256 value = msg.value;
         uint256 fee = 0;
         if (withdraw_fee_numerator > 0) {
-            fee = value.mul(withdraw_fee_numerator).div(withdraw_fee_denominator);
+            fee = value.mul(withdraw_fee_numerator).div(
+                withdraw_fee_denominator
+            );
             msg.sender.transfer(fee);
             value = value.sub(fee);
         }
@@ -408,5 +546,12 @@ contract Staking is IAdmin, IStaking, IWorker {
      */
     function refundToOwner() public onlyOwner {
         owner.transfer(address(this).balance);
+    }
+
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256) {
+        return total_balance;
     }
 }

@@ -16,4 +16,9 @@ interface IWorker {
      * Returns the amount of balance owned by `account`.
      */
     function workerBalanceOf(address account) external view returns (uint256);
+
+    /**
+     * Returns the interest of the worker should refund.
+     */
+    function getWorkerInterest(address worker) external view returns (uint256);
 }
