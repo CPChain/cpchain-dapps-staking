@@ -54,6 +54,18 @@ contract("Staking", (accounts) => {
     });
 
     await utils.checkWithdrawnBalance(instance, address, utils.cpc(0));
+
+    // Worker's interest
+    let total_workers_interest = 0
+    for(let i=0; i < workers.length; i++) {
+      // get the interest of workers
+      let balance = web3.utils.fromWei(await instance.workerBalanceOf(workers[i]))
+      let interest = await instance.getWorkerInterest(workers[i])
+      interest = web3.utils.fromWei(interest)
+      console.log(workers[i], balance, interest)
+      total_workers_interest += parseFloat(interest)
+    }
+    console.log(total_workers_interest)
   });
   it("7位用户各Deposit了 10 CPC，Admin 分配 13 CPC", async () => {
     const instance = await Staking.deployed();
@@ -100,7 +112,20 @@ contract("Staking", (accounts) => {
     }
     // 减去上条测试中分配的 10 CPC
     total_interest = total_interest.sub(new BN(utils.cpc(10)));
-    console.log("------");
-    console.log(web3.utils.fromWei(total_interest));
+    // 统计总利息大小
+    assert.equal(web3.utils.fromWei(total_interest) <= 13, true)
+    assert.equal(web3.utils.fromWei(total_interest) > 12.9, true)
+
+    // Worker's interest
+    let total_workers_interest = 0
+    for(let i=0; i < workers.length; i++) {
+      // get the interest of workers
+      let balance = web3.utils.fromWei(await instance.workerBalanceOf(workers[i]))
+      let interest = await instance.getWorkerInterest(workers[i])
+      interest = web3.utils.fromWei(interest)
+      console.log(workers[i], balance, interest)
+      total_workers_interest += parseFloat(interest)
+    }
+    console.log(total_workers_interest)
   });
 });
