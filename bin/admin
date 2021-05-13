@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+
+import json
+import getpass
+import argparse
+
+from cpc_fusion import Web3
+
+DEFAULT_ENDPOINT = 'https://civilian.cpchain.io'
+
+# args parser
+parser = argparse.ArgumentParser()
+
+
+def deploy(args):
+    """ deploy contract
+    """
+    # web3 client
+    cf = Web3(Web3.HTTPProvider(args.endpoint))
+
+    # load contract
+    with open(args.contract, 'r') as fr:
+        contract_data = json.load(fr)
+    contract = cf.cpc.contract(
+        abi=contract_data['abi'], bytecode=contract_data['bytecode'])
+
+    # build tx
+    keystorePath = args.keystore
+    with open(keystorePath, 'r') as fr:
+        ks = json.load(fr)
+        addr = cf.toChecksumAddress(ks['address'])
+    gas_price = cf.cpc.gasPrice
+    nonce = cf.cpc.getTransactionCount(addr)
+    estimated_gas = contract.constructor().estimateGas()
+    tx = contract.constructor().buildTransaction({
+        'gasPrice': gas_price,
+        "nonce": nonce,
+        "gas": estimated_gas,
+        "from": addr,
+        "value": cf.toWei(0, 'ether'),
+        "type": 0,
+        "chainId": 337
+    })
+
+    # send tx
+    password = getpass.getpass("Please input your password:")
+    decrypted_key = cf.cpc.account.decrypt(ks, password)
+    password = ""
+    signed_txn = cf.cpc.account.signTransaction(tx, decrypted_key)
+    tx_hash = cf.cpc.sendRawTransaction(signed_txn.rawTransaction)
+            
+    # get tx receipt to get contract address
+    tx_receipt = cf.cpc.waitForTransactionReceipt(tx_hash)
+    address = tx_receipt['contractAddress']
+    print(f'{contract_data["contractName"]} Address: {address}')
+    return address
+
+subparsers = parser.add_subparsers(help="sub-command help")
+
+# Deploy
+deploy_parser = subparsers.add_parser('deploy', help='deploy contract')
+deploy_parser.add_argument('--keystore', required=True)
+deploy_parser.add_argument('--contract', required=True)
+deploy_parser.add_argument('--endpoint', type=str, default=DEFAULT_ENDPOINT)
+deploy_parser.set_defaults(func=deploy)
+
+args = parser.parse_args()
+
+if len(args.__dict__) <= 1:
+    # No arguments or subcommands were given.
+    parser.print_help()
+    parser.exit()
+
+args.func(args)
