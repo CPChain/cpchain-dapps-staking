@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "build": "truffle build",
     "test": "truffle test",
     "test:coverage": "truffle run coverage"
   },

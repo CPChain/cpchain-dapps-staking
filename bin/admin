@@ -1,28 +1,80 @@
 #!/usr/bin/env python
 
+"""
+
+Test contract address: 0xF0cb6b45a902d2aa225305E5F0b920eb3D81c42B
+
+"""
+
 import json
 import getpass
 import argparse
+import logging
+import sys
 
 from cpc_fusion import Web3
 
 DEFAULT_ENDPOINT = 'https://civilian.cpchain.io'
 
+logging.basicConfig(stream=sys.stdout, level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+log = logging.getLogger()
+
 # args parser
 parser = argparse.ArgumentParser()
+
+
+def get_cf(args):
+    # web3 client
+    cf = Web3(Web3.HTTPProvider(args.endpoint))
+    return cf
+
+
+def get_contract(cf, args):
+    # load contract
+    with open(args.contract_file, 'r') as fr:
+        contract_data = json.load(fr)
+    contract = cf.cpc.contract(
+        abi=contract_data['abi'], bytecode=contract_data['bytecode'])
+    return contract, 'Staking'
+
+
+def get_instance(cf, args):
+    with open(args.contract_file, 'r') as fr:
+        contract_data = json.load(fr)
+    instance = cf.cpc.contract(
+        abi=contract_data['abi'], address=args.contract_addr)
+    return instance
+
+
+def load_keystore(cf, args):
+    keystorePath = args.keystore
+    with open(keystorePath, 'r') as fr:
+        ks = json.load(fr)
+        addr = cf.toChecksumAddress(ks['address'])
+        return ks, addr
+
+
+def submit_tx(cf, ks, tx):
+    password = getpass.getpass("Please input your password: ")
+    decrypted_key = cf.cpc.account.decrypt(ks, password)
+    password = ""
+    signed_txn = cf.cpc.account.signTransaction(tx, decrypted_key)
+    tx_hash = cf.cpc.sendRawTransaction(signed_txn.rawTransaction)
+    receipt = cf.cpc.waitForTransactionReceipt(tx_hash)
+    if receipt.status == 0:
+        print(receipt)
+        log.info('Sorry, failed.')
+    else:
+        log.info('Success')
 
 
 def deploy(args):
     """ deploy contract
     """
-    # web3 client
-    cf = Web3(Web3.HTTPProvider(args.endpoint))
+    cf = get_cf(args)
 
-    # load contract
-    with open(args.contract, 'r') as fr:
-        contract_data = json.load(fr)
-    contract = cf.cpc.contract(
-        abi=contract_data['abi'], bytecode=contract_data['bytecode'])
+    contract, name = get_contract(cf, args)
 
     # build tx
     keystorePath = args.keystore
@@ -48,21 +100,109 @@ def deploy(args):
     password = ""
     signed_txn = cf.cpc.account.signTransaction(tx, decrypted_key)
     tx_hash = cf.cpc.sendRawTransaction(signed_txn.rawTransaction)
-            
+
     # get tx receipt to get contract address
     tx_receipt = cf.cpc.waitForTransactionReceipt(tx_hash)
     address = tx_receipt['contractAddress']
-    print(f'{contract_data["contractName"]} Address: {address}')
+    print(f'{name} Address: {address}')
     return address
+
+
+def show_configs(args):
+    cf = get_cf(args)
+    contract = get_instance(cf, args)
+    # show configs
+    enable = contract.functions.enabled().call()
+    withdraw_fee_numerator = contract.functions.withdraw_fee_numerator().call()
+    withdraw_fee_denominator = contract.functions.withdraw_fee_denominator().call()
+    worker_balance_limit = contract.functions.worker_balance_limit().call()
+    user_balance_limit = contract.functions.user_balance_limit().call()
+    tx_upper_limit = contract.functions.tx_upper_limit().call()
+    tx_lower_limit = contract.functions.tx_lower_limit().call()
+    withdraw_upper_limit = contract.functions.withdraw_upper_limit().call()
+    print('=' * 20)
+    print("Enable:", enable)
+    print("Withdraw Fee Numerator:", withdraw_fee_numerator)
+    print("Withdraw Fee Denominator:", withdraw_fee_denominator)
+    print("Worker Balance Limit:", worker_balance_limit)
+    print("User Balance Limit:", user_balance_limit)
+    print("Tx Upper Limit:", tx_upper_limit)
+    print("Tx Lower Limit:", tx_lower_limit)
+    print("Withdraw Upper Limit:", withdraw_upper_limit)
+    print('=' * 20)
+    print("Worker's cnt:", contract.functions.workersCnt().call())
+
+
+def add_worker(args):
+    """ Add the worker
+    """
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+    worker_addr = cf.toChecksumAddress(args.worker)
+    gas_price = cf.cpc.gasPrice
+
+    ks, addr = load_keystore(cf, args)
+
+    nonce = cf.cpc.getTransactionCount(addr)
+    tx = instance.functions.addWorker(worker_addr).buildTransaction({
+        'gasPrice': gas_price,
+        "nonce": nonce,
+        "gas": 300000,
+        "from": addr,
+        "value": 0,
+        "type": 0,
+        "chainId": 337
+    })
+    submit_tx(cf, ks, tx)
+
+
+def remove_worker(args):
+    pass
+
+
+def stats_interest(args):
+    pass
+
+
+def appeal_refund(args):
+    pass
+
+
+def monitoring(args):
+    """
+    Monitoring the event for appeal
+    """
+    pass
+
 
 subparsers = parser.add_subparsers(help="sub-command help")
 
 # Deploy
 deploy_parser = subparsers.add_parser('deploy', help='deploy contract')
 deploy_parser.add_argument('--keystore', required=True)
-deploy_parser.add_argument('--contract', required=True)
+deploy_parser.add_argument('--contract-file', required=True)
 deploy_parser.add_argument('--endpoint', type=str, default=DEFAULT_ENDPOINT)
 deploy_parser.set_defaults(func=deploy)
+
+# show-configs
+configs_parser = subparsers.add_parser(
+    'show-configs', help='show configurations')
+configs_parser.add_argument('--contract-file', required=True)
+configs_parser.add_argument('--contract-addr', required=True)
+configs_parser.add_argument('--endpoint', type=str, default=DEFAULT_ENDPOINT)
+configs_parser.set_defaults(func=show_configs)
+
+# add-worker
+add_worker_parser = subparsers.add_parser('add-worker', help="add worker")
+add_worker_parser.add_argument('--keystore', required=True)
+add_worker_parser.add_argument('--contract-file', required=True)
+add_worker_parser.add_argument(
+    '--endpoint', type=str, default=DEFAULT_ENDPOINT)
+add_worker_parser.add_argument('--contract-addr', required=True)
+add_worker_parser.add_argument('worker', type=str)
+add_worker_parser.set_defaults(func=add_worker)
+
+# remove worker
 
 args = parser.parse_args()
 

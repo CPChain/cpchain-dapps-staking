@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+
+import asyncio
+
+async def main():
+    # read the data
+    while True:
+        pass
+
+
+# Python 3.7+
+asyncio.run(main())
