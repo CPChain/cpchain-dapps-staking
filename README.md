@@ -14,6 +14,9 @@ bin/admin deploy --keystore $KEYSTORE --contract-file build/contracts/Staking.js
 
 export ADDRESS="<contract address>"
 
+# check configurations
+bin/admin show-configs --contract-file build/contracts/Staking.json --contract-addr $ADDRESS
+
 ```
 
 ## Unit Tests
@@ -28,10 +31,18 @@ truffle run coverage
 
 ## Workers Manage
 
-### Add worker
+### Add Worker
 
 ```bash
 
-bin/admin add-worker --keystore $KEYSTORE --contract-file build/contracts/Staking.json --contract-addr  333
+bin/admin add-worker --keystore $KEYSTORE --contract-file build/contracts/Staking.json --contract-addr $ADDRESS
+
+```
+
+### Remove Worker
+
+```bash
+
+bin/admin remove-worker --keystore $KEYSTORE --contract-file build/contracts/Staking.json --contract-addr $ADDRESS
 
 ```

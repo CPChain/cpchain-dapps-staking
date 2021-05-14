@@ -134,7 +134,7 @@ def show_configs(args):
 
 
 def add_worker(args):
-    """ Add the worker
+    """ Add a worker
     """
     cf = get_cf(args)
     instance = get_instance(cf, args)
@@ -157,7 +157,26 @@ def add_worker(args):
 
 
 def remove_worker(args):
-    pass
+    """ Remove a worker
+    """
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+    worker_addr = cf.toChecksumAddress(args.worker)
+    gas_price = cf.cpc.gasPrice
+
+    ks, addr = load_keystore(cf, args)
+
+    nonce = cf.cpc.getTransactionCount(addr)
+    tx = instance.functions.removeWorker(worker_addr).buildTransaction({
+        'gasPrice': gas_price,
+        "nonce": nonce,
+        "gas": 300000,
+        "from": addr,
+        "value": 0,
+        "type": 0,
+        "chainId": 337
+    })
+    submit_tx(cf, ks, tx)
 
 
 def stats_interest(args):
@@ -175,32 +194,35 @@ def monitoring(args):
     pass
 
 
+def build_parser(subparsers, name, func=None, helps="Help", keystore=False,
+                 contract_file=False, endpoint=False, contract_addr=False):
+    parser = subparsers.add_parser(name, help=helps)
+    if keystore:
+        parser.add_argument('--keystore', required=True)
+    if contract_file:
+        parser.add_argument('--contract-file', required=True)
+    if endpoint:
+        parser.add_argument('--endpoint', type=str, default=DEFAULT_ENDPOINT)
+    if contract_addr:
+        parser.add_argument('--contract-addr', type=str)
+    parser.set_defaults(func=func)
+    return parser
+
+
 subparsers = parser.add_subparsers(help="sub-command help")
 
-# Deploy
-deploy_parser = subparsers.add_parser('deploy', help='deploy contract')
-deploy_parser.add_argument('--keystore', required=True)
-deploy_parser.add_argument('--contract-file', required=True)
-deploy_parser.add_argument('--endpoint', type=str, default=DEFAULT_ENDPOINT)
-deploy_parser.set_defaults(func=deploy)
+# deploy
+build_parser(subparsers, 'deploy', deploy, 'deploy contract',
+             keystore=True, contract_file=True, endpoint=True)
 
 # show-configs
-configs_parser = subparsers.add_parser(
-    'show-configs', help='show configurations')
-configs_parser.add_argument('--contract-file', required=True)
-configs_parser.add_argument('--contract-addr', required=True)
-configs_parser.add_argument('--endpoint', type=str, default=DEFAULT_ENDPOINT)
-configs_parser.set_defaults(func=show_configs)
+build_parser(subparsers, 'show-configs', show_configs, 'show configurations',
+             contract_file=True, contract_addr=True, endpoint=True)
 
 # add-worker
-add_worker_parser = subparsers.add_parser('add-worker', help="add worker")
-add_worker_parser.add_argument('--keystore', required=True)
-add_worker_parser.add_argument('--contract-file', required=True)
-add_worker_parser.add_argument(
-    '--endpoint', type=str, default=DEFAULT_ENDPOINT)
-add_worker_parser.add_argument('--contract-addr', required=True)
+add_worker_parser = build_parser(subparsers, 'add-worker', helps='add worker', keystore=True,
+                                 contract_file=True, contract_addr=True, endpoint=True)
 add_worker_parser.add_argument('worker', type=str)
-add_worker_parser.set_defaults(func=add_worker)
 
 # remove worker
 
