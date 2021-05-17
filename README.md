@@ -62,6 +62,9 @@ bin/admin list-workers --contract-file build/contracts/Staking.json
 
 ```bash
 
+# Deposit
 bin/user deposit --keystore $KEYSTORE --contract-file build/contracts/Staking.json --contract-addr $ADDRESS 2
+
+bin/user get-balance --contract-file build/contracts/Staking.json --contract-addr $ADDRESS
 
 ```

@@ -10,7 +10,6 @@ import json
 import getpass
 import argparse
 import logging
-import os
 import sys
 
 from cpc_fusion import Web3
@@ -94,7 +93,8 @@ def deposit(args):
             fromBlock=receipt.blockNumber).get_all_entries()
         for e in events:
             value = cf.fromWei(e.args['value'], 'ether')
-            log.info(f"Selected worker: {e.args['selectedWorker']}, value: {value}")
+            log.info(
+                f"Selected worker: {e.args['selectedWorker']}, value: {value}")
 
 
 def show_configs(args):
@@ -122,6 +122,25 @@ def show_configs(args):
     print("Worker's cnt:", contract.functions.workersCnt().call())
 
 
+def get_balance(args):
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+    addr = cf.toChecksumAddress(args.address)
+
+    # address
+    balance = cf.fromWei(instance.functions.balanceOf(addr).call(), 'ether')
+    withdrawnBalance = cf.fromWei(
+        instance.functions.getWithdrawnBalance(addr).call(), 'ether')
+    appealedBalance = cf.fromWei(
+        instance.functions.getAppealedBalance(addr).call(), 'ether')
+    interest = cf.fromWei(instance.functions.getInterest(addr).call(), 'ether')
+
+    log.info('Balance: %s', balance)
+    log.info('Withdrawn Balance: %s', withdrawnBalance)
+    log.info('Appealed Balance: %s', appealedBalance)
+    log.info('Interest: %s', interest)
+
+
 def build_parser(subparsers, name, func=None, helps="Help", keystore=False,
                  contract_file=False, endpoint=False, contract_address=False):
     parser = subparsers.add_parser(name, help=helps)
@@ -143,6 +162,11 @@ subparsers = parser.add_subparsers(help="sub-command help")
 deposit_parser = build_parser(subparsers, 'deposit', deposit, 'deploy contract',
                               keystore=True, contract_file=True, endpoint=True, contract_address=True)
 deposit_parser.add_argument('value', type=int)
+
+# balance
+balance_parser = build_parser(subparsers, 'get-balance', get_balance, 'get balance',
+                              contract_file=True, endpoint=True, contract_address=True)
+balance_parser.add_argument('address', type=str)
 
 # show-configs
 build_parser(subparsers, 'show-configs', show_configs, 'show configurations',
