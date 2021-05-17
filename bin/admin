@@ -10,6 +10,7 @@ import json
 import getpass
 import argparse
 import logging
+from os import remove
 import sys
 
 from cpc_fusion import Web3
@@ -178,6 +179,8 @@ def remove_worker(args):
     })
     submit_tx(cf, ks, tx)
 
+def is_worker(args):
+    pass
 
 def stats_interest(args):
     pass
@@ -225,6 +228,9 @@ add_worker_parser = build_parser(subparsers, 'add-worker', helps='add worker', k
 add_worker_parser.add_argument('worker', type=str)
 
 # remove worker
+remove_worker_parser = build_parser(subparsers, 'remove-worker', func=remove_worker, helps='remove worker', keystore=True,
+                                    contract_file=True, contract_addr=True, endpoint=True)
+remove_worker_parser.add_argument('worker', type=str)
 
 args = parser.parse_args()
 

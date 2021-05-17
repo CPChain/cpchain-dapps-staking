@@ -35,7 +35,7 @@ truffle run coverage
 
 ```bash
 
-bin/admin add-worker --keystore $KEYSTORE --contract-file build/contracts/Staking.json --contract-addr $ADDRESS
+bin/admin add-worker --keystore $KEYSTORE --contract-file build/contracts/Staking.json --contract-addr $ADDRESS <worker address>
 
 ```
 
@@ -43,6 +43,6 @@ bin/admin add-worker --keystore $KEYSTORE --contract-file build/contracts/Stakin
 
 ```bash
 
-bin/admin remove-worker --keystore $KEYSTORE --contract-file build/contracts/Staking.json --contract-addr $ADDRESS
+bin/admin remove-worker --keystore $KEYSTORE --contract-file build/contracts/Staking.json --contract-addr $ADDRESS <worker address>
 
 ```
