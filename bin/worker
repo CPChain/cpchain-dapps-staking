@@ -11,6 +11,10 @@ import getpass
 import argparse
 import logging
 import sys
+import os
+import time
+import threading
+import queue
 
 from cpc_fusion import Web3
 
@@ -22,6 +26,12 @@ log = logging.getLogger()
 
 # args parser
 parser = argparse.ArgumentParser()
+
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
 
 
 def get_cf(args):
@@ -100,17 +110,81 @@ def get_balance(args):
     addr = cf.toChecksumAddress(args.address)
 
     # address
-    balance = cf.fromWei(instance.functions.balanceOf(addr).call(), 'ether')
-    withdrawnBalance = cf.fromWei(
-        instance.functions.getWithdrawnBalance(addr).call(), 'ether')
-    appealedBalance = cf.fromWei(
-        instance.functions.getAppealedBalance(addr).call(), 'ether')
-    interest = cf.fromWei(instance.functions.getInterest(addr).call(), 'ether')
+    balance = cf.fromWei(instance.functions.workerBalanceOf(addr).call(), 'ether')
+    interest = cf.fromWei(instance.functions.getWorkerInterest(addr).call(), 'ether')
 
     log.info('Balance: %s', balance)
-    log.info('Withdrawn Balance: %s', withdrawnBalance)
-    log.info('Appealed Balance: %s', appealedBalance)
     log.info('Interest: %s', interest)
+
+
+def handler(q, cf, instance, decrypted_key, addr):
+    while True:
+        e = q.get()
+        value = cf.fromWei(e.args['value'], 'ether')
+        selected = e.args['selectedWorker']
+        to = e.args['account']
+        if selected.lower() == addr.lower():
+            log.info(
+                f"Selected worker: {selected}, value: {value}, start to refund")
+            gas_price = cf.cpc.gasPrice
+            nonce = cf.cpc.getTransactionCount(addr)
+            tx = instance.functions.refund(to).buildTransaction({
+                'gasPrice': gas_price,
+                "nonce": nonce,
+                "gas": 300000,
+                "from": addr,
+                "value": cf.toWei(value, 'ether'),
+                "type": 0,
+                "chainId": 337
+            })
+
+            # send tx
+            signed_txn = cf.cpc.account.signTransaction(tx, decrypted_key)
+            tx_hash = cf.cpc.sendRawTransaction(signed_txn.rawTransaction)
+            receipt = cf.cpc.waitForTransactionReceipt(tx_hash)
+            if receipt.status == 0:
+                print(receipt)
+                log.info('Sorry, refund failed.')
+            else:
+                log.info('Refund success')
+
+
+def run(args):
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+    ks, addr = load_keystore(cf, args)
+
+    # read password
+    with open(args.password, 'r') as f:
+        password = "".join(f.readlines())
+    password = password.strip()
+    decrypted_key = cf.cpc.account.decrypt(ks, password)
+    
+    q = queue.Queue()
+
+    threading.Thread(target=handler, args=(q, cf, instance, decrypted_key, addr), daemon=True).start()
+
+    # read .worker.json
+    FILE_NAME = '.worker.json'
+    context = dotdict({'fromBlock': 5953500 })
+    if os.path.exists(FILE_NAME):
+        with open(FILE_NAME, 'r') as f:
+            context = json.load(f)
+    
+    context = dotdict(context)
+
+    # Listen the withdraw event from the start block
+    while True:
+        context.fromBlock += 1
+        log.info("#Block %d", context.fromBlock)
+        events = instance.events['Withdraw']().createFilter(
+            fromBlock=context.fromBlock).get_all_entries()
+        for e in events:
+            q.put(e)
+        if cf.cpc.blockNumber <= context.fromBlock:
+            time.sleep(10)
+        with open(FILE_NAME, 'w') as f:
+            f.write(json.dumps(context))
 
 
 def build_parser(subparsers, name, func=None, helps="Help", keystore=False,
@@ -140,6 +214,11 @@ refund_parser.add_argument('value', type=int)
 balance_parser = build_parser(subparsers, 'get-balance', get_balance, 'get balance',
                               contract_file=True, endpoint=True, contract_address=True)
 balance_parser.add_argument('address', type=str)
+
+# run
+run_parser = build_parser(subparsers, 'run', run, 'run',
+                              keystore=True, contract_file=True, endpoint=True, contract_address=True)
+run_parser.add_argument('--password', type=str, required=True)
 
 args = parser.parse_args()
 

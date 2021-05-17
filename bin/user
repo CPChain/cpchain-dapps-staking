@@ -69,7 +69,7 @@ def deposit(args):
     contract = get_instance(cf, args)
 
     # build tx
-    ks, addr = load_keystore(args)
+    ks, addr = load_keystore(cf, args)
     gas_price = cf.cpc.gasPrice
     nonce = cf.cpc.getTransactionCount(addr)
     tx = contract.functions.deposit().buildTransaction({
