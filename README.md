@@ -15,6 +15,8 @@ bin/admin deploy --keystore $KEYSTORE --contract-file build/contracts/Staking.js
 # check configurations
 bin/admin show-configs --contract-file build/contracts/Staking.json
 
+export ADDRESS="<contract address>"
+
 ```
 
 ## Unit Tests
@@ -53,5 +55,13 @@ bin/admin remove-worker --keystore $KEYSTORE --contract-file build/contracts/Sta
 ```bash
 
 bin/admin list-workers --contract-file build/contracts/Staking.json
+
+```
+
+## User Deposit and Withdraw
+
+```bash
+
+bin/user deposit --keystore $KEYSTORE --contract-file build/contracts/Staking.json --contract-addr $ADDRESS 2
 
 ```

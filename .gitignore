@@ -4,4 +4,4 @@ node_modules
 coverage
 coverage.*
 .coverage*
-.staking-*.json
+.staking.json

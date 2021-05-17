@@ -18,7 +18,7 @@ from cpc_fusion import Web3
 
 DEFAULT_ENDPOINT = 'https://civilian.cpchain.io'
 
-FILE_NAME = ".staking-admin.json"
+FILE_NAME = ".staking.json"
 
 EVENT_ADD_WORKER = 'AddWorker'
 EVENT_REMOVE_WORKER = 'RemoveWorker'
@@ -236,7 +236,9 @@ def list_workers(args):
                 workers.remove(w)
 
     for w in workers:
-        log.info(f'{w["address"]}')
+        balance = cf.cpc.getBalance(w['address'])
+        balance = cf.fromWei(balance, 'ether')
+        log.info(f'{w["address"]}: {balance}')
 
 
 def stats_interest(args):
