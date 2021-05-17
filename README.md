@@ -12,10 +12,8 @@ export KEYSTORE="<your keystore file>"
 
 bin/admin deploy --keystore $KEYSTORE --contract-file build/contracts/Staking.json
 
-export ADDRESS="<contract address>"
-
 # check configurations
-bin/admin show-configs --contract-file build/contracts/Staking.json --contract-addr $ADDRESS
+bin/admin show-configs --contract-file build/contracts/Staking.json
 
 ```
 
@@ -35,7 +33,10 @@ truffle run coverage
 
 ```bash
 
-bin/admin add-worker --keystore $KEYSTORE --contract-file build/contracts/Staking.json --contract-addr $ADDRESS <worker address>
+bin/admin add-worker --keystore $KEYSTORE --contract-file build/contracts/Staking.json <worker address>
+
+# check a address
+bin/admin is-worker --contract-file build/contracts/Staking.json <worker address>
 
 ```
 
@@ -43,6 +44,14 @@ bin/admin add-worker --keystore $KEYSTORE --contract-file build/contracts/Stakin
 
 ```bash
 
-bin/admin remove-worker --keystore $KEYSTORE --contract-file build/contracts/Staking.json --contract-addr $ADDRESS <worker address>
+bin/admin remove-worker --keystore $KEYSTORE --contract-file build/contracts/Staking.json <worker address>
+
+```
+
+### List Workers
+
+```bash
+
+bin/admin list-workers --contract-file build/contracts/Staking.json
 
 ```

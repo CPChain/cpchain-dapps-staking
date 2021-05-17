@@ -10,6 +10,7 @@ import json
 import getpass
 import argparse
 import logging
+import os
 from os import remove
 import sys
 
@@ -17,12 +18,35 @@ from cpc_fusion import Web3
 
 DEFAULT_ENDPOINT = 'https://civilian.cpchain.io'
 
+FILE_NAME = ".staking-admin.json"
+
+EVENT_ADD_WORKER = 'AddWorker'
+EVENT_REMOVE_WORKER = 'RemoveWorker'
+
+
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger()
 
 # args parser
 parser = argparse.ArgumentParser()
+
+
+def load_data():
+    if not os.path.exists(FILE_NAME):
+        return {}
+    with open(FILE_NAME, 'r') as fr:
+        return json.load(fr)
+
+
+context = dotdict(load_data())
 
 
 def get_cf(args):
@@ -44,7 +68,7 @@ def get_instance(cf, args):
     with open(args.contract_file, 'r') as fr:
         contract_data = json.load(fr)
     instance = cf.cpc.contract(
-        abi=contract_data['abi'], address=args.contract_addr)
+        abi=contract_data['abi'], address=context.address)
     return instance
 
 
@@ -106,6 +130,8 @@ def deploy(args):
     tx_receipt = cf.cpc.waitForTransactionReceipt(tx_hash)
     address = tx_receipt['contractAddress']
     print(f'{name} Address: {address}')
+    context['address'] = address
+    context['fromBlock'] = tx_receipt.blockNumber
     return address
 
 
@@ -179,8 +205,39 @@ def remove_worker(args):
     })
     submit_tx(cf, ks, tx)
 
+
 def is_worker(args):
-    pass
+    cf = get_cf(args)
+    contract = get_instance(cf, args)
+    worker_addr = cf.toChecksumAddress(args.worker)
+    b = contract.functions.isWorker(worker_addr).call()
+    log.info(f"This address is worker: {b}")
+
+
+def list_workers(args):
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+    # add worker
+    events = instance.events[EVENT_ADD_WORKER]().createFilter(
+        fromBlock=context.fromBlock).get_all_entries()
+    workers = []
+    for e in events:
+        workers.append({
+            'address': e['args']['account'],
+            'number': e['blockNumber']
+        })
+    
+    # remove worker
+    events = instance.events[EVENT_REMOVE_WORKER]().createFilter(
+        fromBlock=context.fromBlock).get_all_entries()
+    for e in events:
+        for w in workers:
+            if e['args']['account'] == w['address'] and e['blockNumber'] > w['number']:
+                workers.remove(w)
+
+    for w in workers:
+        log.info(f'{w["address"]}')
+
 
 def stats_interest(args):
     pass
@@ -198,7 +255,7 @@ def monitoring(args):
 
 
 def build_parser(subparsers, name, func=None, helps="Help", keystore=False,
-                 contract_file=False, endpoint=False, contract_addr=False):
+                 contract_file=False, endpoint=False):
     parser = subparsers.add_parser(name, help=helps)
     if keystore:
         parser.add_argument('--keystore', required=True)
@@ -206,8 +263,6 @@ def build_parser(subparsers, name, func=None, helps="Help", keystore=False,
         parser.add_argument('--contract-file', required=True)
     if endpoint:
         parser.add_argument('--endpoint', type=str, default=DEFAULT_ENDPOINT)
-    if contract_addr:
-        parser.add_argument('--contract-addr', type=str)
     parser.set_defaults(func=func)
     return parser
 
@@ -220,17 +275,26 @@ build_parser(subparsers, 'deploy', deploy, 'deploy contract',
 
 # show-configs
 build_parser(subparsers, 'show-configs', show_configs, 'show configurations',
-             contract_file=True, contract_addr=True, endpoint=True)
+             contract_file=True, endpoint=True)
 
 # add-worker
-add_worker_parser = build_parser(subparsers, 'add-worker', helps='add worker', keystore=True,
-                                 contract_file=True, contract_addr=True, endpoint=True)
+add_worker_parser = build_parser(subparsers, 'add-worker', func=add_worker, helps='add worker', keystore=True,
+                                 contract_file=True, endpoint=True)
 add_worker_parser.add_argument('worker', type=str)
 
 # remove worker
 remove_worker_parser = build_parser(subparsers, 'remove-worker', func=remove_worker, helps='remove worker', keystore=True,
-                                    contract_file=True, contract_addr=True, endpoint=True)
+                                    contract_file=True, endpoint=True)
 remove_worker_parser.add_argument('worker', type=str)
+
+# is worker
+is_worker_parser = build_parser(subparsers, 'is-worker', func=is_worker, helps='whether a address is a worker',
+                                contract_file=True, endpoint=True)
+is_worker_parser.add_argument('worker', type=str)
+
+# list workers
+list_workers_parser = build_parser(subparsers, 'list-workers', func=list_workers, helps='List workers', contract_file=True,
+                                   endpoint=True)
 
 args = parser.parse_args()
 
@@ -240,3 +304,11 @@ if len(args.__dict__) <= 1:
     parser.exit()
 
 args.func(args)
+
+# overwrite context
+def save(context):
+    with open(FILE_NAME, 'w') as f:
+        f.write(json.dumps(context))
+
+
+save(context)
