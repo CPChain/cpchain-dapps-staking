@@ -62,17 +62,14 @@ def submit_tx(cf, ks, tx):
 
 
 def deposit(args):
-    """ deploy contract
+    """ deposit
     """
     cf = get_cf(args)
 
     contract = get_instance(cf, args)
 
     # build tx
-    keystorePath = args.keystore
-    with open(keystorePath, 'r') as fr:
-        ks = json.load(fr)
-        addr = cf.toChecksumAddress(ks['address'])
+    ks, addr = load_keystore(args)
     gas_price = cf.cpc.gasPrice
     nonce = cf.cpc.getTransactionCount(addr)
     tx = contract.functions.deposit().buildTransaction({
@@ -90,6 +87,38 @@ def deposit(args):
 
     if receipt.status != 0:
         events = contract.events['Deposit']().createFilter(
+            fromBlock=receipt.blockNumber).get_all_entries()
+        for e in events:
+            value = cf.fromWei(e.args['value'], 'ether')
+            log.info(
+                f"Selected worker: {e.args['selectedWorker']}, value: {value}")
+
+
+def withdraw(args):
+    """ withdraw
+    """
+    cf = get_cf(args)
+    contract = get_instance(cf, args)
+
+    # build tx
+    ks, addr = load_keystore(cf, args)
+    gas_price = cf.cpc.gasPrice
+    nonce = cf.cpc.getTransactionCount(addr)
+    tx = contract.functions.withdraw(cf.toWei(args.value, 'ether')).buildTransaction({
+        'gasPrice': gas_price,
+        "nonce": nonce,
+        "gas": 300000,
+        "from": addr,
+        "value": cf.toWei(0, 'ether'),
+        "type": 0,
+        "chainId": 337
+    })
+
+    # send tx
+    receipt = submit_tx(cf, ks, tx)
+
+    if receipt.status != 0:
+        events = contract.events['Withdraw']().createFilter(
             fromBlock=receipt.blockNumber).get_all_entries()
         for e in events:
             value = cf.fromWei(e.args['value'], 'ether')
@@ -159,7 +188,7 @@ def build_parser(subparsers, name, func=None, helps="Help", keystore=False,
 subparsers = parser.add_subparsers(help="sub-command help")
 
 # deposit
-deposit_parser = build_parser(subparsers, 'deposit', deposit, 'deploy contract',
+deposit_parser = build_parser(subparsers, 'deposit', deposit, 'deposit amount',
                               keystore=True, contract_file=True, endpoint=True, contract_address=True)
 deposit_parser.add_argument('value', type=int)
 
@@ -167,6 +196,11 @@ deposit_parser.add_argument('value', type=int)
 balance_parser = build_parser(subparsers, 'get-balance', get_balance, 'get balance',
                               contract_file=True, endpoint=True, contract_address=True)
 balance_parser.add_argument('address', type=str)
+
+# withdraw
+withdraw_parser = build_parser(subparsers, 'withdraw', withdraw, 'withdraw amount',
+                              keystore=True, contract_file=True, endpoint=True, contract_address=True)
+withdraw_parser.add_argument('value', type=int)
 
 # show-configs
 build_parser(subparsers, 'show-configs', show_configs, 'show configurations',

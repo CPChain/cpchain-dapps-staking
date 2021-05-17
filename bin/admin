@@ -134,6 +134,9 @@ def deploy(args):
     context['fromBlock'] = tx_receipt.blockNumber
     return address
 
+def to_cpc(cf, value):
+    return cf.fromWei(value, 'ether')
+
 
 def show_configs(args):
     cf = get_cf(args)
@@ -142,22 +145,25 @@ def show_configs(args):
     enable = contract.functions.enabled().call()
     withdraw_fee_numerator = contract.functions.withdraw_fee_numerator().call()
     withdraw_fee_denominator = contract.functions.withdraw_fee_denominator().call()
-    worker_balance_limit = contract.functions.worker_balance_limit().call()
-    user_balance_limit = contract.functions.user_balance_limit().call()
-    tx_upper_limit = contract.functions.tx_upper_limit().call()
-    tx_lower_limit = contract.functions.tx_lower_limit().call()
-    withdraw_upper_limit = contract.functions.withdraw_upper_limit().call()
+    worker_balance_limit = to_cpc(cf, contract.functions.worker_balance_limit().call())
+    user_balance_limit = to_cpc(cf, contract.functions.user_balance_limit().call())
+    tx_upper_limit = to_cpc(cf, contract.functions.tx_upper_limit().call())
+    tx_lower_limit = to_cpc(cf, contract.functions.tx_lower_limit().call())
+    withdraw_upper_limit = to_cpc(cf, contract.functions.withdraw_upper_limit().call())
     print('=' * 20)
     print("Enable:", enable)
     print("Withdraw Fee Numerator:", withdraw_fee_numerator)
     print("Withdraw Fee Denominator:", withdraw_fee_denominator)
-    print("Worker Balance Limit:", worker_balance_limit)
-    print("User Balance Limit:", user_balance_limit)
-    print("Tx Upper Limit:", tx_upper_limit)
-    print("Tx Lower Limit:", tx_lower_limit)
-    print("Withdraw Upper Limit:", withdraw_upper_limit)
+    print("Worker Balance Limit:", worker_balance_limit, 'CPC')
+    print("User Balance Limit:", user_balance_limit, 'CPC')
+    print("Tx Upper Limit:", tx_upper_limit, 'CPC')
+    print("Tx Lower Limit:", tx_lower_limit, 'CPC')
+    print("Withdraw Upper Limit:", withdraw_upper_limit, 'CPC')
     print('=' * 20)
     print("Worker's cnt:", contract.functions.workersCnt().call())
+    print('=' * 20)
+    print("Total balance:", to_cpc(cf, contract.functions.total_balance().call()), 'CPC')
+
 
 
 def add_worker(args):
