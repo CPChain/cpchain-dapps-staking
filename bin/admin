@@ -6,6 +6,8 @@ Test contract address: 0xF0cb6b45a902d2aa225305E5F0b920eb3D81c42B
 
 """
 
+from datetime import datetime as dt
+import requests
 import json
 import getpass
 import argparse
@@ -135,6 +137,7 @@ def deploy(args):
     context['fromBlock'] = tx_receipt.blockNumber
     return address
 
+
 def to_cpc(cf, value):
     return cf.fromWei(value, 'ether')
 
@@ -146,11 +149,14 @@ def show_configs(args):
     enable = contract.functions.enabled().call()
     withdraw_fee_numerator = contract.functions.withdraw_fee_numerator().call()
     withdraw_fee_denominator = contract.functions.withdraw_fee_denominator().call()
-    worker_balance_limit = to_cpc(cf, contract.functions.worker_balance_limit().call())
-    user_balance_limit = to_cpc(cf, contract.functions.user_balance_limit().call())
+    worker_balance_limit = to_cpc(
+        cf, contract.functions.worker_balance_limit().call())
+    user_balance_limit = to_cpc(
+        cf, contract.functions.user_balance_limit().call())
     tx_upper_limit = to_cpc(cf, contract.functions.tx_upper_limit().call())
     tx_lower_limit = to_cpc(cf, contract.functions.tx_lower_limit().call())
-    withdraw_upper_limit = to_cpc(cf, contract.functions.withdraw_upper_limit().call())
+    withdraw_upper_limit = to_cpc(
+        cf, contract.functions.withdraw_upper_limit().call())
     print('=' * 20)
     print("Enable:", enable)
     print("Withdraw Fee Numerator:", withdraw_fee_numerator)
@@ -163,8 +169,8 @@ def show_configs(args):
     print('=' * 20)
     print("Worker's cnt:", contract.functions.workersCnt().call())
     print('=' * 20)
-    print("Total balance:", to_cpc(cf, contract.functions.total_balance().call()), 'CPC')
-
+    print("Total balance:", to_cpc(
+        cf, contract.functions.total_balance().call()), 'CPC')
 
 
 def add_worker(args):
@@ -221,9 +227,7 @@ def is_worker(args):
     log.info(f"This address is worker: {b}")
 
 
-def list_workers(args):
-    cf = get_cf(args)
-    instance = get_instance(cf, args)
+def get_all_workers(cf, instance, args):
     # add worker
     events = instance.events[EVENT_ADD_WORKER]().createFilter(
         fromBlock=context.fromBlock).get_all_entries()
@@ -233,7 +237,7 @@ def list_workers(args):
             'address': e['args']['account'],
             'number': e['blockNumber']
         })
-    
+
     # remove worker
     events = instance.events[EVENT_REMOVE_WORKER]().createFilter(
         fromBlock=context.fromBlock).get_all_entries()
@@ -242,6 +246,14 @@ def list_workers(args):
             if e['args']['account'] == w['address'] and e['blockNumber'] > w['number']:
                 workers.remove(w)
 
+    return workers
+
+
+def list_workers(args):
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+    workers = get_all_workers(cf, instance, args)
+
     for w in workers:
         balance = cf.cpc.getBalance(w['address'])
         balance = cf.fromWei(balance, 'ether')
@@ -249,7 +261,67 @@ def list_workers(args):
 
 
 def stats_interest(args):
-    pass
+    """ 利息统计，按日统计，记录在 .staking.json 文件中，防止重复
+    """
+    # list workers
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+    workers = get_all_workers(cf, instance, args)
+    # iterate all workers to get yesterday interest
+    yesterday = context.yesterday
+    if yesterday is None:
+        yesterday = dt.strftime(dt.now(), '%Y-%m-%d')
+    else:
+        if yesterday == dt.strftime(dt.now(), '%Y-%m-%d'):
+            log.error("The yesterday interest have been distributed.")
+            return
+    # get rewards
+    api = 'https://api.cpchain.io/chain/reward-history/{address}/?date={yesterday}'
+    rewards = 0
+    for worker in workers:
+        addr = worker['address']
+        log.info(f"get {yesterday}'s reward of {addr}")
+        res = requests.get(api.format(address=addr, yesterday=yesterday))
+        data = res.json()
+        if data['count'] == 0:
+            log.error(f"worker {addr} didn't get any rewards at {yesterday}")
+        else:
+            rewards += data['results'][0]['rewards']
+    log.info(f'total rewards yesterday: {rewards} CPC')
+    if rewards >= (8640 * 9.51 * 2) / 3: # 如果奖励总数超过了一天产量的 2/3，则说明不可能
+        log.error("This is error because yesterday's rewards is too large.")
+    else:
+        interest = 0.5 * rewards
+        context.yesterday = yesterday
+        log.info(f"distributed {yesterday}'s interest: {interest} CPC to the staking contract.")
+        # build tx
+        ks, addr = load_keystore(cf, args)
+        gas_price = cf.cpc.gasPrice
+        nonce = cf.cpc.getTransactionCount(addr)
+        tx = instance.functions.statsInterest(cf.toWei(interest, 'ether')).buildTransaction({
+            'gasPrice': gas_price,
+            "nonce": nonce,
+            "gas": 300000,
+            "from": addr,
+            "value": cf.toWei(0, 'ether'),
+            "type": 0,
+            "chainId": 337
+        })
+
+        # send tx
+        receipt = submit_tx(cf, ks, tx)
+
+        if receipt.status != 0:
+            events = instance.events['StatsInterest']().createFilter(
+                fromBlock=receipt.blockNumber).get_all_entries()
+            for e in events:
+                value = cf.fromWei(e.args['amount'], 'ether')
+                addr_cnt = e.args['address_cnt']
+                height = e.args['height']
+                total_balance = e.args['total_balance']
+                log.info(
+                    f"distributed success, total_balance: {total_balance}, value: {value}, address_cnt: {addr_cnt}, height: {height}")
+
 
 
 def appeal_refund(args):
@@ -334,9 +406,14 @@ list_workers_parser = build_parser(subparsers, 'list-workers', func=list_workers
 
 # refund
 refund_parser = build_parser(subparsers, 'appeal-refund', appeal_refund, 'refund money',
-                              keystore=True, contract_file=True, endpoint=True)
+                             keystore=True, contract_file=True, endpoint=True)
 refund_parser.add_argument('--to', type=str, required=True)
 refund_parser.add_argument('value', type=int)
+
+# stats interest
+stats_interest_parser = build_parser(subparsers, 'stats-interest', stats_interest, 'stats interest',
+                                     keystore=True, contract_file=True, endpoint=True)
+
 
 args = parser.parse_args()
 
@@ -348,6 +425,8 @@ if len(args.__dict__) <= 1:
 args.func(args)
 
 # overwrite context
+
+
 def save(context):
     with open(FILE_NAME, 'w') as f:
         f.write(json.dumps(context))
