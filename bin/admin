@@ -92,6 +92,7 @@ def submit_tx(cf, ks, tx):
         log.info('Sorry, failed.')
     else:
         log.info('Success')
+    return receipt
 
 
 def deploy(args):
@@ -252,7 +253,34 @@ def stats_interest(args):
 
 
 def appeal_refund(args):
-    pass
+    cf = get_cf(args)
+    contract = get_instance(cf, args)
+    to = cf.toChecksumAddress(args.to)
+
+    # build tx
+    ks, addr = load_keystore(cf, args)
+    gas_price = cf.cpc.gasPrice
+    nonce = cf.cpc.getTransactionCount(addr)
+    tx = contract.functions.appealRefund(to).buildTransaction({
+        'gasPrice': gas_price,
+        "nonce": nonce,
+        "gas": 300000,
+        "from": addr,
+        "value": cf.toWei(args.value, 'ether'),
+        "type": 0,
+        "chainId": 337
+    })
+
+    # send tx
+    receipt = submit_tx(cf, ks, tx)
+
+    if receipt.status != 0:
+        events = contract.events['AdminAppealRefund']().createFilter(
+            fromBlock=receipt.blockNumber).get_all_entries()
+        for e in events:
+            value = cf.fromWei(e.args['amount'], 'ether')
+            log.info(
+                f"Refund to: {e.args['user']}, value: {value}")
 
 
 def monitoring(args):
@@ -303,6 +331,12 @@ is_worker_parser.add_argument('worker', type=str)
 # list workers
 list_workers_parser = build_parser(subparsers, 'list-workers', func=list_workers, helps='List workers', contract_file=True,
                                    endpoint=True)
+
+# refund
+refund_parser = build_parser(subparsers, 'appeal-refund', appeal_refund, 'refund money',
+                              keystore=True, contract_file=True, endpoint=True)
+refund_parser.add_argument('--to', type=str, required=True)
+refund_parser.add_argument('value', type=int)
 
 args = parser.parse_args()
 
