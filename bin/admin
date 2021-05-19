@@ -482,7 +482,7 @@ stats_interest_parser = build_parser(subparsers, 'stats-interest', stats_interes
                                      keystore=True, contract_file=True, endpoint=True)
 
 # run
-run_parser = build_parser(subparsers, 'run', run, 'refund money automiclly',
+run_parser = build_parser(subparsers, 'run', run, 'refund money automatically',
                           keystore=True, contract_file=True, endpoint=True)
 run_parser.add_argument('--password', type=str, required=True)
 
