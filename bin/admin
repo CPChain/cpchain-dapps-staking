@@ -9,12 +9,15 @@ Test contract address: 0xF0cb6b45a902d2aa225305E5F0b920eb3D81c42B
 from datetime import datetime as dt
 import requests
 import json
+import time
 import getpass
 import argparse
 import logging
 import os
 from os import remove
 import sys
+import threading
+import queue
 
 from cpc_fusion import Web3
 
@@ -46,6 +49,11 @@ def load_data():
         return {}
     with open(FILE_NAME, 'r') as fr:
         return json.load(fr)
+
+
+def save(context):
+    with open(FILE_NAME, 'w') as f:
+        f.write(json.dumps(context))
 
 
 context = dotdict(load_data())
@@ -135,6 +143,7 @@ def deploy(args):
     print(f'{name} Address: {address}')
     context['address'] = address
     context['fromBlock'] = tx_receipt.blockNumber
+    context['deployedBlockNumber'] = tx_receipt.blockNumber
     return address
 
 
@@ -230,7 +239,7 @@ def is_worker(args):
 def get_all_workers(cf, instance, args):
     # add worker
     events = instance.events[EVENT_ADD_WORKER]().createFilter(
-        fromBlock=context.fromBlock).get_all_entries()
+        fromBlock=context.deployedBlockNumber).get_all_entries()
     workers = []
     for e in events:
         workers.append({
@@ -240,7 +249,7 @@ def get_all_workers(cf, instance, args):
 
     # remove worker
     events = instance.events[EVENT_REMOVE_WORKER]().createFilter(
-        fromBlock=context.fromBlock).get_all_entries()
+        fromBlock=context.deployedBlockNumber).get_all_entries()
     for e in events:
         for w in workers:
             if e['args']['account'] == w['address'] and e['blockNumber'] > w['number']:
@@ -288,12 +297,13 @@ def stats_interest(args):
         else:
             rewards += data['results'][0]['rewards']
     log.info(f'total rewards yesterday: {rewards} CPC')
-    if rewards >= (8640 * 9.51 * 2) / 3: # 如果奖励总数超过了一天产量的 2/3，则说明不可能
+    if rewards >= (8640 * 9.51 * 2) / 3:  # 如果奖励总数超过了一天产量的 2/3，则说明不可能
         log.error("This is error because yesterday's rewards is too large.")
     else:
         interest = 0.5 * rewards
         context.yesterday = yesterday
-        log.info(f"distributed {yesterday}'s interest: {interest} CPC to the staking contract.")
+        log.info(
+            f"distributed {yesterday}'s interest: {interest} CPC to the staking contract.")
         # build tx
         ks, addr = load_keystore(cf, args)
         gas_price = cf.cpc.gasPrice
@@ -321,7 +331,6 @@ def stats_interest(args):
                 total_balance = e.args['total_balance']
                 log.info(
                     f"distributed success, total_balance: {total_balance}, value: {value}, address_cnt: {addr_cnt}, height: {height}")
-
 
 
 def appeal_refund(args):
@@ -355,11 +364,69 @@ def appeal_refund(args):
                 f"Refund to: {e.args['user']}, value: {value}")
 
 
-def monitoring(args):
+def appeal_refund_handler(q, cf, instance, decrypted_key, addr):
+    while True:
+        e = q.get()
+        to, value, height = e.args['account'], e.args['value'], e.args['blockHeight']
+        value = cf.fromWei(value, 'ether')
+        log.info(
+            f"start to refund to the appeald user: {to} with {value} CPC, reported at #{height}")
+        tx = instance.functions.appealRefund(to).buildTransaction({
+            'gasPrice': cf.cpc.gasPrice,
+            "nonce": cf.cpc.getTransactionCount(addr),
+            "gas": 300000,
+            "from": addr,
+            "value": cf.toWei(value, 'ether'),
+            "type": 0,
+            "chainId": 337
+        })
+        signed_txn = cf.cpc.account.signTransaction(tx, decrypted_key)
+        tx_hash = cf.cpc.sendRawTransaction(signed_txn.rawTransaction)
+        receipt = cf.cpc.waitForTransactionReceipt(tx_hash)
+        if receipt.status != 0:
+            events = instance.events['AdminAppealRefund']().createFilter(
+                fromBlock=receipt.blockNumber).get_all_entries()
+            for e in events:
+                value = cf.fromWei(e.args['amount'], 'ether')
+                log.info(
+                    f"refund success: {e.args['user']}, value: {value}")
+        else:
+            log.error(
+                f"refund failed: {to} with {value} CPC, reported at #{height}")
+        q.task_done()
+
+
+def run(args):
     """
-    Monitoring the event for appeal
+    Monitoring the event for stats-interest and appeal-refund
     """
-    pass
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+    ks, addr = load_keystore(cf, args)
+
+    # read password
+    with open(args.password, 'r') as f:
+        password = "".join(f.readlines())
+    password = password.strip()
+    decrypted_key = cf.cpc.account.decrypt(ks, password)
+
+    # appeal-refund
+    q1 = queue.Queue()
+
+    threading.Thread(target=appeal_refund_handler, args=(
+        q1, cf, instance, decrypted_key, addr), daemon=True).start()
+
+    while True:
+        context.fromBlock += 1
+        log.info("#Block %d", context.fromBlock)
+        # Appeal
+        events = instance.events['Appeal']().createFilter(
+            fromBlock=context.fromBlock).get_all_entries()
+        for e in events:
+            q1.put(e)
+        if cf.cpc.blockNumber <= context.fromBlock:
+            time.sleep(10)
+        save(context)
 
 
 def build_parser(subparsers, name, func=None, helps="Help", keystore=False,
@@ -414,6 +481,11 @@ refund_parser.add_argument('value', type=int)
 stats_interest_parser = build_parser(subparsers, 'stats-interest', stats_interest, 'stats interest',
                                      keystore=True, contract_file=True, endpoint=True)
 
+# run
+run_parser = build_parser(subparsers, 'run', run, 'refund money automiclly',
+                          keystore=True, contract_file=True, endpoint=True)
+run_parser.add_argument('--password', type=str, required=True)
+
 
 args = parser.parse_args()
 
@@ -425,11 +497,4 @@ if len(args.__dict__) <= 1:
 args.func(args)
 
 # overwrite context
-
-
-def save(context):
-    with open(FILE_NAME, 'w') as f:
-        f.write(json.dumps(context))
-
-
 save(context)

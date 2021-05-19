@@ -147,6 +147,7 @@ def handler(q, cf, instance, decrypted_key, addr):
                 log.info('Sorry, refund failed.')
             else:
                 log.info('Refund success')
+        q.task_done()
 
 
 def run(args):
