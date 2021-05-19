@@ -306,7 +306,6 @@ def stats_interest(args):
         log.error("This is error because yesterday's rewards is too large.")
     else:
         interest = 0.5 * rewards
-        context.yesterday = yesterday
         log.info(
             f"distributed {yesterday}'s interest: {interest} CPC to the staking contract.")
         # build tx
@@ -336,7 +335,7 @@ def stats_interest(args):
                 total_balance = e.args['total_balance']
                 log.info(
                     f"distributed success, total_balance: {total_balance}, value: {value}, address_cnt: {addr_cnt}, height: {height}")
-
+        context.yesterday = dt.strftime(dt.now(), '%Y-%m-%d')
 
 def appeal_refund(args):
     cf = get_cf(args)
