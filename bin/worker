@@ -182,6 +182,7 @@ def run(args):
             fromBlock=context.fromBlock).get_all_entries()
         for e in events:
             q.put(e)
+            context.fromBlock = e['blockNumber']
         if cf.cpc.blockNumber <= context.fromBlock:
             time.sleep(10)
         with open(FILE_NAME, 'w') as f:

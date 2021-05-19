@@ -90,8 +90,13 @@ def load_keystore(cf, args):
         return ks, addr
 
 
-def submit_tx(cf, ks, tx):
-    password = getpass.getpass("Please input your password: ")
+def submit_tx(cf, ks, tx, password_file=None):
+    if password_file is None:
+        password = getpass.getpass("Please input your password: ")
+    else:
+        with open(password_file, 'r') as f:
+            password = "".join(f.readlines())
+        password = password.strip()
     decrypted_key = cf.cpc.account.decrypt(ks, password)
     password = ""
     signed_txn = cf.cpc.account.signTransaction(tx, decrypted_key)
@@ -319,7 +324,7 @@ def stats_interest(args):
         })
 
         # send tx
-        receipt = submit_tx(cf, ks, tx)
+        receipt = submit_tx(cf, ks, tx, args.password)
 
         if receipt.status != 0:
             events = instance.events['StatsInterest']().createFilter(
@@ -424,6 +429,7 @@ def run(args):
             fromBlock=context.fromBlock).get_all_entries()
         for e in events:
             q1.put(e)
+            context.fromBlock = e['blockNumber']
         if cf.cpc.blockNumber <= context.fromBlock:
             time.sleep(10)
         save(context)
@@ -480,6 +486,7 @@ refund_parser.add_argument('value', type=int)
 # stats interest
 stats_interest_parser = build_parser(subparsers, 'stats-interest', stats_interest, 'stats interest',
                                      keystore=True, contract_file=True, endpoint=True)
+stats_interest_parser.add_argument('--password', type=str, required=False)
 
 # run
 run_parser = build_parser(subparsers, 'run', run, 'refund money automatically',

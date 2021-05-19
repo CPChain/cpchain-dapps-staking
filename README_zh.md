@@ -59,4 +59,6 @@ export ADMIN_PASSWORD=<keystore file>
 
 bin/admin run --keystore $ADMIN_KEYSTORE --contract-file build/contracts/Staking.json --password $ADMIN_PASSWORD
 
+bin/admin stats-interest --keystore $ADMIN_KEYSTORE --contract-file build/contracts/Staking.json --password $ADMIN_PASSWORD
+
 ```
