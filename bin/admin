@@ -44,19 +44,19 @@ log = logging.getLogger()
 parser = argparse.ArgumentParser()
 
 
-def load_data():
-    if not os.path.exists(FILE_NAME):
+def load_data(filename):
+    if not os.path.exists(filename):
         return {}
-    with open(FILE_NAME, 'r') as fr:
+    with open(filename, 'r') as fr:
         return json.load(fr)
 
 
-def save(context):
-    with open(FILE_NAME, 'w') as f:
+def save(filename, context):
+    with open(filename, 'w') as f:
         f.write(json.dumps(context))
 
 
-context = dotdict(load_data())
+context = dotdict(load_data(FILE_NAME))
 
 
 def get_cf(args):
@@ -282,13 +282,20 @@ def stats_interest(args):
     instance = get_instance(cf, args)
     workers = get_all_workers(cf, instance, args)
     # iterate all workers to get yesterday interest
-    yesterday = context.yesterday
+    YESTERDAY_FILE = '.yesterday.json'
+    yesterday_data = dict(yesterday=None)
+    if os.path.exists(YESTERDAY_FILE):
+        yesterday_data = load_data(YESTERDAY_FILE)
+    yesterday_data = dotdict(yesterday_data)
+    yesterday = yesterday_data.yesterday
     if yesterday is None:
         yesterday = dt.strftime(dt.now(), '%Y-%m-%d')
     else:
         if yesterday == dt.strftime(dt.now(), '%Y-%m-%d'):
             log.error("The yesterday interest have been distributed.")
             return
+        else:
+            yesterday = dt.strftime(dt.now(), '%Y-%m-%d')
     # get rewards
     api = 'https://api.cpchain.io/chain/reward-history/{address}/?date={yesterday}'
     rewards = 0
@@ -335,7 +342,8 @@ def stats_interest(args):
                 total_balance = e.args['total_balance']
                 log.info(
                     f"distributed success, total_balance: {total_balance}, value: {value}, address_cnt: {addr_cnt}, height: {height}")
-        context.yesterday = dt.strftime(dt.now(), '%Y-%m-%d')
+        yesterday_data.yesterday = dt.strftime(dt.now(), '%Y-%m-%d')
+        save(YESTERDAY_FILE, yesterday_data)
 
 def appeal_refund(args):
     cf = get_cf(args)
@@ -421,7 +429,6 @@ def run(args):
         q1, cf, instance, decrypted_key, addr), daemon=True).start()
 
     while True:
-        context.fromBlock += 1
         log.info("#Block %d", context.fromBlock)
         # Appeal
         events = instance.events['Appeal']().createFilter(
@@ -430,8 +437,13 @@ def run(args):
             q1.put(e)
             context.fromBlock = e['blockNumber']
         if cf.cpc.blockNumber <= context.fromBlock:
-            time.sleep(10)
-        save(context)
+            current = cf.cpc.blockNumber
+            while current == cf.cpc.blockNumber:
+                time.sleep(0.1)
+            context.fromBlock = cf.cpc.blockNumber
+        else:
+            context.fromBlock += 1
+        save(FILE_NAME, context)
 
 
 def build_parser(subparsers, name, func=None, helps="Help", keystore=False,
@@ -503,4 +515,4 @@ if len(args.__dict__) <= 1:
 args.func(args)
 
 # overwrite context
-save(context)
+save(FILE_NAME, context)

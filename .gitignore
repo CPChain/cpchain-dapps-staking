@@ -5,3 +5,4 @@ coverage.*
 .coverage*
 .staking.json
 .worker.json
+.yesterday.json

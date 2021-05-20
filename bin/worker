@@ -176,7 +176,6 @@ def run(args):
 
     # Listen the withdraw event from the start block
     while True:
-        context.fromBlock += 1
         log.info("#Block %d", context.fromBlock)
         events = instance.events['Withdraw']().createFilter(
             fromBlock=context.fromBlock).get_all_entries()
@@ -184,7 +183,12 @@ def run(args):
             q.put(e)
             context.fromBlock = e['blockNumber']
         if cf.cpc.blockNumber <= context.fromBlock:
-            time.sleep(10)
+            current = cf.cpc.blockNumber
+            while current == cf.cpc.blockNumber:
+                time.sleep(0.1)
+            context.fromBlock = cf.cpc.blockNumber
+        else:
+            context.fromBlock += 1
         with open(FILE_NAME, 'w') as f:
             f.write(json.dumps(context))
 
