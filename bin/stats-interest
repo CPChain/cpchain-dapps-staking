@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+cd "$(dirname "${BASH_SOURCE[0]}")"/..
+
+source .env
+
+mkdir -p logs
+
+bin/admin stats-interest --keystore $ADMIN_KEYSTORE --contract-file build/contracts/Staking.json --password $ADMIN_PASSWORD >> logs/stats-interest.log

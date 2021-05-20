@@ -6,3 +6,4 @@ coverage.*
 .staking.json
 .worker.json
 .yesterday.json
+logs
