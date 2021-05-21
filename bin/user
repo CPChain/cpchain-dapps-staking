@@ -221,7 +221,7 @@ subparsers = parser.add_subparsers(help="sub-command help")
 # deposit
 deposit_parser = build_parser(subparsers, 'deposit', deposit, 'deposit amount',
                               keystore=True, contract_file=True, endpoint=True, contract_address=True)
-deposit_parser.add_argument('value', type=int)
+deposit_parser.add_argument('value', type=float)
 
 # balance
 balance_parser = build_parser(subparsers, 'get-balance', get_balance, 'get balance',
@@ -231,7 +231,7 @@ balance_parser.add_argument('address', type=str)
 # withdraw
 withdraw_parser = build_parser(subparsers, 'withdraw', withdraw, 'withdraw amount',
                               keystore=True, contract_file=True, endpoint=True, contract_address=True)
-withdraw_parser.add_argument('value', type=int)
+withdraw_parser.add_argument('value', type=float)
 
 # appeal
 appeal_parser = build_parser(subparsers, 'appeal', appeal, 'appeal',

@@ -62,3 +62,11 @@ bin/admin run --keystore $ADMIN_KEYSTORE --contract-file build/contracts/Staking
 bin/admin stats-interest --keystore $ADMIN_KEYSTORE --contract-file build/contracts/Staking.json --password $ADMIN_PASSWORD
 
 ```
+
+### 更改管理员
+
+```bash
+
+bin/admin change-owner --keystore $ADMIN_KEYSTORE --contract-file build/contracts/Staking.json <new owner>
+
+```
