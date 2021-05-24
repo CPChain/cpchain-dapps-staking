@@ -123,6 +123,7 @@ def handler(q, cf, instance, decrypted_key, addr):
         value = cf.fromWei(e.args['value'], 'ether')
         selected = e.args['selectedWorker']
         to = e.args['account']
+        log.info(f"slected worker: {selected.lower()}")
         if selected.lower() == addr.lower():
             log.info(
                 f"Selected worker: {selected}, value: {value}, start to refund")
