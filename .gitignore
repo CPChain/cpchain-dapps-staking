@@ -3,8 +3,8 @@ node_modules
 coverage
 coverage.*
 .coverage*
-.staking.json
-.worker.json
-.yesterday.json
+.staking*.json
+.worker*.json
+.yesterday*.json
 logs
 .env

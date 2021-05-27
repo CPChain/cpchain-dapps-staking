@@ -391,6 +391,20 @@ contract Staking is IAdmin, IStaking, IWorker {
         return workers[worker].interest;
     }
 
+    function statsInterestTest(uint256 all_interest) external {
+        address[] memory items = users_list.getAll();
+        uint256 balance = 0;
+        uint256 before_total = 46041 ether;
+        uint256 interest =
+                all_interest.mul(balance).div(before_total);
+        emit StatsInterest(
+            interest,
+            total_balance,
+            items.length,
+            block.number
+        );
+    }
+
     /**
      * Stats the interest that all workers earned yesterday and distributed by the ratio of balance of all addresses.
      * Returns a boolean value indicating whether the operation succeeded.
@@ -405,7 +419,18 @@ contract Staking is IAdmin, IStaking, IWorker {
         address[] memory items = users_list.getAll();
         // users
         uint256 before_total = total_balance;
+        // uint256 unit = 1 wei;
         for (uint256 i = 0; i < items.length; i++) {
+            // // 整数利息
+            // uint256 integer_part = all_interest.div(unit);
+            // integer_part = integer_part.mul(users[items[i]].balance).div(before_total);
+            // // 小数利息
+            // uint256 decimal_part = all_interest.div(unit).mul(unit);
+            // decimal_part = all_interest.sub(decimal_part);
+            // decimal_part = decimal_part.mul(users[items[i]].balance).div(before_total);
+
+            // uint256 interest =
+            //     integer_part.mul(unit).add(decimal_part);
             uint256 interest =
                 all_interest.mul(users[items[i]].balance).div(before_total);
             users[items[i]].balance = users[items[i]].balance.add(interest);
@@ -417,6 +442,16 @@ contract Staking is IAdmin, IStaking, IWorker {
         address[] memory worker_items = workers_list.getAll();
         for (uint256 j = 0; j < worker_items.length; j++) {
             address current = worker_items[j];
+            // // 整数利息
+            // integer_part = all_interest.div(unit);
+            // integer_part = integer_part.mul(workers[current].balance).div(before_total);
+            // // 小数利息
+            // decimal_part = all_interest.div(unit).mul(unit);
+            // decimal_part = all_interest.sub(decimal_part);
+            // decimal_part = decimal_part.mul(workers[current].balance).div(before_total);
+
+            // uint256 worker_interest = integer_part.mul(unit).add(decimal_part);
+
             uint256 worker_interest = all_interest.mul(workers[current].balance).div(before_total);
             workers[current].balance = workers[current].balance.add(worker_interest);
             workers[current].interest = workers[current].interest.add(worker_interest);

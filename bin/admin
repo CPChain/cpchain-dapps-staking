@@ -314,13 +314,14 @@ def stats_interest(args):
         log.error("This is error because yesterday's rewards is too large.")
     else:
         interest = 0.5 * rewards
+        interest = 1
         log.info(
             f"distributed {yesterday}'s interest: {interest} CPC to the staking contract.")
         # build tx
         ks, addr = load_keystore(cf, args)
         gas_price = cf.cpc.gasPrice
         nonce = cf.cpc.getTransactionCount(addr)
-        tx = instance.functions.statsInterest(cf.toWei(interest, 'ether')).buildTransaction({
+        tx = instance.functions.statsInterestTest(cf.toWei(interest, 'ether')).buildTransaction({
             'gasPrice': gas_price,
             "nonce": nonce,
             "gas": 300000,
@@ -346,7 +347,9 @@ def stats_interest(args):
             yesterday_data.yesterday = dt.strftime(dt.now(), '%Y-%m-%d')
             save(YESTERDAY_FILE, yesterday_data)
         else:
-            pass
+            logs = receipt.logs
+            print(logs)
+
 
 def appeal_refund(args):
     cf = get_cf(args)
