@@ -391,19 +391,19 @@ contract Staking is IAdmin, IStaking, IWorker {
         return workers[worker].interest;
     }
 
-    function statsInterestTest(uint256 all_interest) external {
-        address[] memory items = users_list.getAll();
-        uint256 balance = 0;
-        uint256 before_total = 46041 ether;
-        uint256 interest =
-                all_interest.mul(balance).div(before_total);
-        emit StatsInterest(
-            interest,
-            total_balance,
-            items.length,
-            block.number
-        );
-    }
+    // function statsInterestTest(uint256 all_interest) external {
+    //     address[] memory items = users_list.getAll();
+    //     uint256 balance = 0;
+    //     uint256 before_total = 46041 ether;
+    //     uint256 interest =
+    //             all_interest.mul(balance).div(before_total);
+    //     emit StatsInterest(
+    //         interest,
+    //         total_balance,
+    //         items.length,
+    //         block.number
+    //     );
+    // }
 
     /**
      * Stats the interest that all workers earned yesterday and distributed by the ratio of balance of all addresses.
