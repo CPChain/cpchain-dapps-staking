@@ -1,0 +1,214 @@
+#!/usr/bin/env python3
+
+#!/usr/bin/env python3
+
+"""
+
+Test contract address: 0xF0cb6b45a902d2aa225305E5F0b920eb3D81c42B
+
+"""
+
+from datetime import datetime as dt
+import requests
+import json
+import time
+import getpass
+import argparse
+import logging
+import os
+from os import remove
+import sys
+import threading
+import queue
+
+from cpc_fusion import Web3
+
+DEFAULT_ENDPOINT = 'https://civilian.cpchain.io'
+
+FILE_NAME = ".staking.json"
+
+EVENT_ADD_WORKER = 'AddWorker'
+EVENT_REMOVE_WORKER = 'RemoveWorker'
+
+TEMP_ADMIN_KEYSTORE = os.environ['ADMIN_KEYSTORE']
+TEMP_ADMIN_PASSWORD = os.environ['ADMIN_PASSWORD']
+
+
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+log = logging.getLogger()
+
+# args parser
+parser = argparse.ArgumentParser()
+
+
+def load_data(filename):
+    if not os.path.exists(filename):
+        return {}
+    with open(filename, 'r') as fr:
+        return json.load(fr)
+
+
+def save(filename, context):
+    with open(filename, 'w') as f:
+        f.write(json.dumps(context))
+
+
+context = dotdict(load_data(FILE_NAME))
+
+
+def get_cf(args):
+    # web3 client
+    cf = Web3(Web3.HTTPProvider(args.endpoint))
+    return cf
+
+
+def get_contract(cf, args):
+    # load contract
+    with open(args.contract_file, 'r') as fr:
+        contract_data = json.load(fr)
+    contract = cf.cpc.contract(
+        abi=contract_data['abi'], bytecode=contract_data['bytecode'])
+    return contract, 'Staking'
+
+
+def get_instance(cf, args):
+    with open(args.contract_file, 'r') as fr:
+        contract_data = json.load(fr)
+    instance = cf.cpc.contract(
+        abi=contract_data['abi'], address=context.address)
+    return instance
+
+
+def load_keystore(cf, args):
+    keystorePath = args.keystore
+    with open(keystorePath, 'r') as fr:
+        ks = json.load(fr)
+        addr = cf.toChecksumAddress(ks['address'])
+        return ks, addr
+
+
+def submit_tx(cf, ks, tx, password_file=None):
+    if password_file is None:
+        password = getpass.getpass("Please input your password: ")
+    else:
+        with open(password_file, 'r') as f:
+            password = "".join(f.readlines())
+        password = password.strip()
+    decrypted_key = cf.cpc.account.decrypt(ks, password)
+    password = ""
+    signed_txn = cf.cpc.account.signTransaction(tx, decrypted_key)
+    tx_hash = cf.cpc.sendRawTransaction(signed_txn.rawTransaction)
+    receipt = cf.cpc.waitForTransactionReceipt(tx_hash)
+    if receipt.status == 0:
+        print(receipt)
+        log.info('Sorry, failed.')
+    else:
+        log.info('Success')
+    return receipt
+
+
+def init_user(address, amount, interest):
+    # list workers
+    args = dotdict({
+        'endpoint': DEFAULT_ENDPOINT,
+        'contract_file': 'build/contracts/Staking.json',
+        'keystore': TEMP_ADMIN_KEYSTORE,
+        'password': TEMP_ADMIN_PASSWORD
+    })
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+
+    # build tx
+    ks, addr = load_keystore(cf, args)
+    gas_price = cf.cpc.gasPrice
+    nonce = cf.cpc.getTransactionCount(addr)
+    user = cf.toChecksumAddress(address)
+    tx = instance.functions.setUserBalance(user, cf.toWei(amount, 'ether'), cf.toWei(interest, 'ether')).buildTransaction({
+        'gasPrice': gas_price,
+        "nonce": nonce,
+        "gas": 300000,
+        "from": addr,
+        "value": cf.toWei(0, 'ether'),
+        "type": 0,
+        "chainId": 337
+    })
+
+    # send tx
+    receipt = submit_tx(cf, ks, tx, args.password)
+
+    if receipt.status != 0:
+        print(f'{address} success')
+
+
+def init_worker(address, amount, interest):
+    # list workers
+    args = dotdict({
+        'endpoint': DEFAULT_ENDPOINT,
+        'contract_file': 'build/contracts/Staking.json',
+        'keystore': TEMP_ADMIN_KEYSTORE,
+        'password': TEMP_ADMIN_PASSWORD
+    })
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+
+    # build tx
+    ks, addr = load_keystore(cf, args)
+    gas_price = cf.cpc.gasPrice
+    nonce = cf.cpc.getTransactionCount(addr)
+    user = cf.toChecksumAddress(address)
+    tx = instance.functions.setWorkerBalance(user, cf.toWei(amount, 'ether'), cf.toWei(interest, 'ether')).buildTransaction({
+        'gasPrice': gas_price,
+        "nonce": nonce,
+        "gas": 300000,
+        "from": addr,
+        "value": cf.toWei(0, 'ether'),
+        "type": 0,
+        "chainId": 337
+    })
+
+    # send tx
+    receipt = submit_tx(cf, ks, tx, args.password)
+
+    if receipt.status != 0:
+        print(f'{address} success')
+
+init_user('0x112b1F80280Cb25E1e417Cd312A2c42131c1a581', '33427', '2637.457157513602188331')
+init_user('0x222b2F80280Cb25E2e427Cd312A2c42232c1a581', '33427', '2637.457157513602188331')
+init_user('0x332b3F80280Cb25E3e437Cd312A2c42333c1a581', '23166', '2637.457157513602188331')
+init_user('0x442b4F80280Cb25E4e447Cd312A2c42434c1a581', '14.8876543', '2637.457157513602188331')
+init_user('0x552b5F80280Cb25E5e457Cd312A2c42535c1a581', '20000.23144', '2637.457157513602188331')
+init_user('0x662b6F80280Cb25E6e467Cd312A2c42636c1a581', '133333.343211', '2637.457157513602188331')
+init_user('0x772b7F80280Cb25E7e477Cd312A2c42737c1a581', '40000.232323', '2637.457157513602188331')
+init_user('0x882b8F80280Cb25E8e487Cd312A2c42838c1a581', '5000.11222', '2637.457157513602188331')
+init_user('0x992b9F80280Cb25E9e497Cd312A2c42939c1a581', '10000', '2637.457157513602188331')
+init_user('0x11312F80280Cb2521e197Cd312A2c41210c1a581', '10000', '2637.457157513602188331')
+
+# init_user('0x0F941173c95C32e8547eF195b20A99052d332BB4', '1', '2637.457157513602188331')
+# init_user('0x0F741173c95C32e8547eF195b20A99052d332BB4', '2', '2637.457157513602188331')
+# init_user('0x0F641173c95C32e8547eF195b20A99052d332BB4', '0', '2637.457157513602188331')
+
+# init_user('0x122b3F80280Cb25E7e477Cd312A2c42331c1a581', '0', '519.226686504953998141')
+# init_user('0x1455D180E3adE94ebD9cC324D22a9065d1F5F575', '0', '1206.051734493176596588')
+# init_user('0x182A6EdcdBf6fAeC28d9C12693c664825deA4a9E', '0', '0.197786405844894347')
+# init_user('0x5EC5a3c7D05fE5C6c3387A0f2448EF53866d4bd3', '0.006323907190026003', '144.876323907190091539')
+# init_user('0x9d29F5C9bD8FE0e383eDEde40b9Dd61ed20EE86e', 1.671645256E-9, '99.882134951671645256')
+# init_user('0xA345f4321da76C8Ac1D5243f9f7e7474D8eC21B8', '0.007578795082731725', '5.427578795082731725')
+
+# init_user('0xb83121e1d8E9e892abe42f6891C0AeBfc4D7DdC8', '46040', '0')
+
+# init_user('0xdF707454531bc909E13E4905bfDFbC312652F6c3', 7.341520563E-9, '296.679608767341520563')
+# init_user('0xe1dEC1e1e282b53491EBB766FAA04Fd18F37534a', '0', '0.059155424134123487')
+# init_user('0xf48f230C3212f5091c7711B35a798639cA26Bea2', '0', '0')
+# init_user('0xfD64e653f17CE3879402F06134F0ee66b1fcBbbb', '0', '0')
+
+# init_worker('0x93DD259864b1c7Cf3E071d2FE0BeA336B309AF67', '123365.524206963478196453', '1816.384060172168506924')
+# init_worker('0x5eEF280003d72368D9375cfF8857856C1b3f647f', '116614.096557604254130945', '2329.284344010099025292')
+# init_worker('0x9386B9acCb2712Ed7f01eaC135679c221ffb18F5', '16298.633138143553595649', '764.189762580730257773')

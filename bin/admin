@@ -272,7 +272,9 @@ def list_workers(args):
     for w in workers:
         balance = cf.cpc.getBalance(w['address'])
         balance = cf.fromWei(balance, 'ether')
-        log.info(f'{w["address"]}: {balance}')
+        b = cf.fromWei(instance.functions.workerBalanceOf(w['address']).call(), 'ether')
+        i = cf.fromWei(instance.functions.getWorkerInterest(w['address']).call(), 'ether')
+        log.info(f'{w["address"]}: {balance} {b} {i}')
 
 
 def stats_interest(args):
@@ -314,17 +316,17 @@ def stats_interest(args):
         log.error("This is error because yesterday's rewards is too large.")
     else:
         interest = 0.5 * rewards
-        interest = 1
         log.info(
             f"distributed {yesterday}'s interest: {interest} CPC to the staking contract.")
         # build tx
         ks, addr = load_keystore(cf, args)
         gas_price = cf.cpc.gasPrice
         nonce = cf.cpc.getTransactionCount(addr)
-        tx = instance.functions.statsInterestTest(cf.toWei(interest, 'ether')).buildTransaction({
+        interest = cf.toWei(interest, 'ether')
+        tx = instance.functions.statsInterest(interest).buildTransaction({
             'gasPrice': gas_price,
             "nonce": nonce,
-            "gas": 300000,
+            "gas": 2000000,
             "from": addr,
             "value": cf.toWei(0, 'ether'),
             "type": 0,
@@ -341,7 +343,7 @@ def stats_interest(args):
                 value = cf.fromWei(e.args['amount'], 'ether')
                 addr_cnt = e.args['address_cnt']
                 height = e.args['height']
-                total_balance = e.args['total_balance']
+                total_balance = cf.fromWei(e.args['total_balance'], 'ether')
                 log.info(
                     f"distributed success, total_balance: {total_balance}, value: {value}, address_cnt: {addr_cnt}, height: {height}")
             yesterday_data.yesterday = dt.strftime(dt.now(), '%Y-%m-%d')

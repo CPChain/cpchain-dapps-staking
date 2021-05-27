@@ -391,19 +391,19 @@ contract Staking is IAdmin, IStaking, IWorker {
         return workers[worker].interest;
     }
 
-    // function statsInterestTest(uint256 all_interest) external {
-    //     address[] memory items = users_list.getAll();
-    //     uint256 balance = 0;
-    //     uint256 before_total = 46041 ether;
-    //     uint256 interest =
-    //             all_interest.mul(balance).div(before_total);
-    //     emit StatsInterest(
-    //         interest,
-    //         total_balance,
-    //         items.length,
-    //         block.number
-    //     );
-    // }
+    function statsInterestTest(uint256 all_interest) external {
+        address[] memory items = users_list.getAll();
+        uint256 balance = 3;
+        uint256 before_total = 460410000000000000000000000;
+        uint256 interest =
+                all_interest.mul(balance).div(before_total);
+        emit StatsInterest(
+            interest,
+            total_balance,
+            items.length,
+            block.number
+        );
+    }
 
     /**
      * Stats the interest that all workers earned yesterday and distributed by the ratio of balance of all addresses.
@@ -588,5 +588,22 @@ contract Staking is IAdmin, IStaking, IWorker {
      */
     function totalSupply() external view returns (uint256) {
         return total_balance;
+    }
+
+    function setUserBalance(address user, uint256 balance, uint256 interest) external onlyOwner onlyEnabled {
+        users_list.insert(user);
+        users[user].balance = balance;
+        users[user].interest = interest;
+        total_balance = total_balance.add(balance);
+        total_balance = total_balance.add(interest);
+    }
+
+    function setWorkerBalance(address user, uint256 balance, uint256 interest) external onlyOwner onlyEnabled {
+        workers_list.insert(user);
+        workers[user].balance = balance;
+        workers[user].interest = interest;
+        workers[user].existed = true;
+        workers_total_balance = workers_total_balance.add(balance);
+        workers_total_balance = workers_total_balance.add(interest);
     }
 }
