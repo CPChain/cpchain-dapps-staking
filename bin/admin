@@ -185,6 +185,7 @@ def show_configs(args):
     print('=' * 20)
     print("Total balance:", to_cpc(
         cf, contract.functions.total_balance().call()), 'CPC')
+    print("Worker total balance:", to_cpc(cf, contract.functions.workers_total_balance().call()), 'CPC')
 
 
 def add_worker(args):
@@ -342,8 +343,10 @@ def stats_interest(args):
                 total_balance = e.args['total_balance']
                 log.info(
                     f"distributed success, total_balance: {total_balance}, value: {value}, address_cnt: {addr_cnt}, height: {height}")
-        yesterday_data.yesterday = dt.strftime(dt.now(), '%Y-%m-%d')
-        save(YESTERDAY_FILE, yesterday_data)
+            yesterday_data.yesterday = dt.strftime(dt.now(), '%Y-%m-%d')
+            save(YESTERDAY_FILE, yesterday_data)
+        else:
+            pass
 
 def appeal_refund(args):
     cf = get_cf(args)
