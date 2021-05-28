@@ -419,6 +419,7 @@ contract Staking is IAdmin, IStaking, IWorker {
         address[] memory items = users_list.getAll();
         // users
         uint256 before_total = total_balance;
+        // TODO make this variable be settable
         // uint256 unit = 1 wei;
         for (uint256 i = 0; i < items.length; i++) {
             // // 整数利息
