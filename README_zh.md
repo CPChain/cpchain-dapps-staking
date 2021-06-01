@@ -70,3 +70,11 @@ bin/admin stats-interest --keystore $ADMIN_KEYSTORE --contract-file build/contra
 bin/admin change-owner --keystore $ADMIN_KEYSTORE --contract-file build/contracts/Staking.json <new owner>
 
 ```
+
+## 设置 Worker 限额
+
+```bash
+
+bin/admin set-worker-upper-limit --keystore $ADMIN_KEYSTORE --contract-file build/contracts/Staking.json 1200000
+
+```
