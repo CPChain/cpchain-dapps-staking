@@ -78,3 +78,19 @@ bin/admin change-owner --keystore $ADMIN_KEYSTORE --contract-file build/contract
 bin/admin set-worker-upper-limit --keystore $ADMIN_KEYSTORE --contract-file build/contracts/Staking.json 1200000
 
 ```
+
+## 设置用户个人最高限额
+
+```bash
+
+bin/admin set-user-upper-limit --keystore $ADMIN_KEYSTORE --contract-file build/contracts/Staking.json 500000
+
+```
+
+## 设置单笔交易存入的最高限额
+
+```bash
+
+bin/admin set-tx-upper-limit --keystore $ADMIN_KEYSTORE --contract-file build/contracts/Staking.json 50000
+
+```

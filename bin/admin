@@ -500,6 +500,51 @@ def set_worker_upper_limit(args):
     submit_tx(cf, ks, tx)
 
 
+def set_user_upper_limit(args):
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+    ks, addr = load_keystore(cf, args)
+
+    value = args.value
+
+    gas_price = cf.cpc.gasPrice
+    nonce = cf.cpc.getTransactionCount(addr)
+    tx = instance.functions.setUserBalanceLimit(cf.toWei(value, 'ether')).buildTransaction({
+        'gasPrice': gas_price,
+        "nonce": nonce,
+        "gas": 300000,
+        "from": addr,
+        "value": cf.toWei(0, 'ether'),
+        "type": 0,
+        "chainId": 337
+    })
+
+    # send tx
+    submit_tx(cf, ks, tx)
+
+
+def set_tx_upper_limit(args):
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+    ks, addr = load_keystore(cf, args)
+
+    value = args.value
+
+    gas_price = cf.cpc.gasPrice
+    nonce = cf.cpc.getTransactionCount(addr)
+    tx = instance.functions.setTxUpperLimit(cf.toWei(value, 'ether')).buildTransaction({
+        'gasPrice': gas_price,
+        "nonce": nonce,
+        "gas": 300000,
+        "from": addr,
+        "value": cf.toWei(0, 'ether'),
+        "type": 0,
+        "chainId": 337
+    })
+
+    # send tx
+    submit_tx(cf, ks, tx)
+
 def build_parser(subparsers, name, func=None, helps="Help", keystore=False,
                  contract_file=False, endpoint=False):
     parser = subparsers.add_parser(name, help=helps)
@@ -567,6 +612,16 @@ change_owner_parser.add_argument('target', type=str)
 worker_upper_limit = build_parser(subparsers, 'set-worker-upper-limit', set_worker_upper_limit, 'set worker upper limit',
                           keystore=True, contract_file=True, endpoint=True)
 worker_upper_limit.add_argument('value', type=float)
+
+# set user upper limit
+user_upper_limit = build_parser(subparsers, 'set-user-upper-limit', set_user_upper_limit, 'set user upper limit',
+                          keystore=True, contract_file=True, endpoint=True)
+user_upper_limit.add_argument('value', type=float)
+
+# set tx upper limit
+tx_upper_limit = build_parser(subparsers, 'set-tx-upper-limit', set_tx_upper_limit, 'set tx upper limit',
+                          keystore=True, contract_file=True, endpoint=True)
+tx_upper_limit.add_argument('value', type=float)
 
 args = parser.parse_args()
 
