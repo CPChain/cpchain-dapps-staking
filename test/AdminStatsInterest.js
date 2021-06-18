@@ -133,24 +133,5 @@ contract("Staking", (accounts) => {
       total_workers_interest += parseFloat(interest)
     }
     console.log("Total workers interest", total_workers_interest)
-  });
-  it("复现溢出漏洞", async ()=> {
-    const instance = await Staking.deployed();
-
-    // 分配 3000,000 CPC 以造成溢出
-    let value = 300000000.888999
-    let tx = await instance.statsInterestTest(utils.cpc(value));
-    let e = await utils.getEvent(tx, utils.EVENT_STATS_INTEREST);
-    assert.equal(e.address_cnt.toString(), "7");
-    console.log("--->>>>>>", web3.utils.fromWei(e.amount))
-
-    // 将某个地址提空，然后进行利息分配
-    const address = accounts[5];
-    await instance.withdraw(await await instance.balanceOf(address), { from: address });
-
-    await utils.checkNormalBalance(instance, address, utils.cpc(0));
-
-    await instance.statsInterest(utils.cpc(13));
-
   })
 });
