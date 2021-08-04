@@ -326,7 +326,7 @@ def stats_interest(args):
         tx = instance.functions.statsInterest(interest).buildTransaction({
             'gasPrice': gas_price,
             "nonce": nonce,
-            "gas": 2000000,
+            "gas": 5000000,
             "from": addr,
             "value": cf.toWei(0, 'ether'),
             "type": 0,
