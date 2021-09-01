@@ -13,8 +13,7 @@ import logging
 import sys
 import os
 import time
-import threading
-import queue
+import requests
 
 from cpc_fusion import Web3
 from logging import handlers
@@ -46,6 +45,21 @@ def get_cf(args):
     cf = Web3(Web3.HTTPProvider(args.endpoint))
     return cf
 
+
+def post_message(url, message, title="staking-worker"):
+    headers = {"Content-Type": "application/json"}
+    data = {'msgtype': 'markdown',
+            'markdown': {
+                'title': title,
+                'text': message
+            },
+            'at': {
+                "isAtAll": True
+            }
+        }
+    response = requests.post(url=url, headers=headers, json=data)
+    result = response.json()
+    log.info(result)
 
 def get_instance(cf, args):
     with open(args.contract_file, 'r') as fr:
@@ -156,6 +170,7 @@ def handle_event(cf, instance, decrypted_key, addr, e):
 
 
 def run(args):
+    dingding_url = args.dingding
     cf = get_cf(args)
     instance = get_instance(cf, args)
     ks, addr = load_keystore(cf, args)
@@ -180,9 +195,23 @@ def run(args):
         log.info("#Block %d", context.fromBlock)
         events = instance.events['Withdraw']().createFilter(
             fromBlock=context.fromBlock).get_all_entries()
+        tx_err = False
         for e in events:
-            handle_event(cf, instance, decrypted_key, addr, e)
+            try:
+                handle_event(cf, instance, decrypted_key, addr, e)
+            except Exception as e:
+                log.error(e)
+                post_message(dingding_url, str(e))
+                if 'replacement transaction underpriced' in str(e):
+                    # 跟 Worker 的挖矿交易重复，等待 10 秒后退出循环
+                    time.sleep(10)
+                    tx_err = True
+                    break
+                else:
+                    return
             context.fromBlock = e['blockNumber']
+        if tx_err:
+            continue
         if cf.cpc.blockNumber <= context.fromBlock:
             current = cf.cpc.blockNumber
             while current == cf.cpc.blockNumber:
@@ -235,6 +264,7 @@ balance_parser.add_argument('address', type=str)
 run_parser = build_parser(subparsers, 'run', run, 'run',
                               keystore=True, contract_file=True, endpoint=True, contract_address=True)
 run_parser.add_argument('--password', type=str, required=True)
+run_parser.add_argument('--dingding', type=str, required=True) # 钉钉报警
 
 # tmp for test
 tmp_parser = build_parser(subparsers, 'tmp', tmp, 'tmp',
