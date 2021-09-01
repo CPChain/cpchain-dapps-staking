@@ -124,38 +124,35 @@ def get_balance(args):
     log.info('Interest: %s', interest)
 
 
-def handler(q, cf, instance, decrypted_key, addr):
-    while True:
-        e = q.get()
-        value = cf.fromWei(e.args['value'], 'ether')
-        selected = e.args['selectedWorker']
-        to = e.args['account']
-        log.info(f"slected worker: {selected.lower()}")
-        if selected.lower() == addr.lower():
-            log.info(
-                f"Selected worker: {selected}, value: {value}, start to refund")
-            gas_price = cf.cpc.gasPrice
-            nonce = cf.cpc.getTransactionCount(addr)
-            tx = instance.functions.refund(to).buildTransaction({
-                'gasPrice': gas_price,
-                "nonce": nonce,
-                "gas": 300000,
-                "from": addr,
-                "value": cf.toWei(value, 'ether'),
-                "type": 0,
-                "chainId": 337
-            })
+def handle_event(cf, instance, decrypted_key, addr, e):
+    value = cf.fromWei(e.args['value'], 'ether')
+    selected = e.args['selectedWorker']
+    to = e.args['account']
+    log.info(f"slected worker: {selected.lower()}")
+    if selected.lower() == addr.lower():
+        log.info(
+            f"Selected worker: {selected}, value: {value}, start to refund")
+        gas_price = cf.cpc.gasPrice
+        nonce = cf.cpc.getTransactionCount(addr)
+        tx = instance.functions.refund(to).buildTransaction({
+            'gasPrice': gas_price,
+            "nonce": nonce,
+            "gas": 300000,
+            "from": addr,
+            "value": cf.toWei(value, 'ether'),
+            "type": 0,
+            "chainId": 337
+        })
 
-            # send tx
-            signed_txn = cf.cpc.account.signTransaction(tx, decrypted_key)
-            tx_hash = cf.cpc.sendRawTransaction(signed_txn.rawTransaction)
-            receipt = cf.cpc.waitForTransactionReceipt(tx_hash)
-            if receipt.status == 0:
-                print(receipt)
-                log.info('Sorry, refund failed.')
-            else:
-                log.info('Refund success')
-        q.task_done()
+        # send tx
+        signed_txn = cf.cpc.account.signTransaction(tx, decrypted_key)
+        tx_hash = cf.cpc.sendRawTransaction(signed_txn.rawTransaction)
+        receipt = cf.cpc.waitForTransactionReceipt(tx_hash)
+        if receipt.status == 0:
+            print(receipt)
+            log.info('Sorry, refund failed.')
+        else:
+            log.info('Refund success')
 
 
 def run(args):
@@ -168,10 +165,6 @@ def run(args):
         password = "".join(f.readlines())
     password = password.strip()
     decrypted_key = cf.cpc.account.decrypt(ks, password)
-    
-    q = queue.Queue()
-
-    threading.Thread(target=handler, args=(q, cf, instance, decrypted_key, addr), daemon=True).start()
 
     # read .worker.json
     FILE_NAME = '.worker.json'
@@ -188,7 +181,7 @@ def run(args):
         events = instance.events['Withdraw']().createFilter(
             fromBlock=context.fromBlock).get_all_entries()
         for e in events:
-            q.put(e)
+            handle_event(cf, instance, decrypted_key, addr, e)
             context.fromBlock = e['blockNumber']
         if cf.cpc.blockNumber <= context.fromBlock:
             current = cf.cpc.blockNumber

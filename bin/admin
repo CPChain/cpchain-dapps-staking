@@ -392,36 +392,33 @@ def appeal_refund(args):
                 f"Refund to: {e.args['user']}, value: {value}")
 
 
-def appeal_refund_handler(q, cf, instance, decrypted_key, addr):
-    while True:
-        e = q.get()
-        to, value, height = e.args['account'], e.args['value'], e.args['blockHeight']
-        value = cf.fromWei(value, 'ether')
-        log.info(
-            f"start to refund to the appeald user: {to} with {value} CPC, reported at #{height}")
-        tx = instance.functions.appealRefund(to).buildTransaction({
-            'gasPrice': cf.cpc.gasPrice,
-            "nonce": cf.cpc.getTransactionCount(addr),
-            "gas": 300000,
-            "from": addr,
-            "value": cf.toWei(value, 'ether'),
-            "type": 0,
-            "chainId": 337
-        })
-        signed_txn = cf.cpc.account.signTransaction(tx, decrypted_key)
-        tx_hash = cf.cpc.sendRawTransaction(signed_txn.rawTransaction)
-        receipt = cf.cpc.waitForTransactionReceipt(tx_hash)
-        if receipt.status != 0:
-            events = instance.events['AdminAppealRefund']().createFilter(
-                fromBlock=receipt.blockNumber).get_all_entries()
-            for e in events:
-                value = cf.fromWei(e.args['amount'], 'ether')
-                log.info(
-                    f"refund success: {e.args['user']}, value: {value}")
-        else:
-            log.error(
-                f"refund failed: {to} with {value} CPC, reported at #{height}")
-        q.task_done()
+def appeal_refund_handler(cf, instance, decrypted_key, addr, e):
+    to, value, height = e.args['account'], e.args['value'], e.args['blockHeight']
+    value = cf.fromWei(value, 'ether')
+    log.info(
+        f"start to refund to the appeald user: {to} with {value} CPC, reported at #{height}")
+    tx = instance.functions.appealRefund(to).buildTransaction({
+        'gasPrice': cf.cpc.gasPrice,
+        "nonce": cf.cpc.getTransactionCount(addr),
+        "gas": 300000,
+        "from": addr,
+        "value": cf.toWei(value, 'ether'),
+        "type": 0,
+        "chainId": 337
+    })
+    signed_txn = cf.cpc.account.signTransaction(tx, decrypted_key)
+    tx_hash = cf.cpc.sendRawTransaction(signed_txn.rawTransaction)
+    receipt = cf.cpc.waitForTransactionReceipt(tx_hash)
+    if receipt.status != 0:
+        events = instance.events['AdminAppealRefund']().createFilter(
+            fromBlock=receipt.blockNumber).get_all_entries()
+        for e in events:
+            value = cf.fromWei(e.args['amount'], 'ether')
+            log.info(
+                f"refund success: {e.args['user']}, value: {value}")
+    else:
+        log.error(
+            f"refund failed: {to} with {value} CPC, reported at #{height}")
 
 
 def run(args):
@@ -450,7 +447,7 @@ def run(args):
         events = instance.events['Appeal']().createFilter(
             fromBlock=context.fromBlock).get_all_entries()
         for e in events:
-            q1.put(e)
+            appeal_refund_handler(cf, instance, decrypted_key, addr, e)
             context.fromBlock = e['blockNumber']
         if cf.cpc.blockNumber <= context.fromBlock:
             current = cf.cpc.blockNumber
