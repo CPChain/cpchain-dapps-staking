@@ -20,6 +20,7 @@ import threading
 import queue
 
 from cpc_fusion import Web3
+from logging import handlers
 
 DEFAULT_ENDPOINT = 'https://civilian.cpchain.io'
 
@@ -38,7 +39,13 @@ class dotdict(dict):
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler = handlers.RotatingFileHandler('logs/admin.log', maxBytes=10 * 1024 * 1024, backupCount=5)
+handler.setFormatter(formatter)
+
 log = logging.getLogger()
+log.addHandler(handler)
 
 # args parser
 parser = argparse.ArgumentParser()
@@ -157,6 +164,7 @@ def to_cpc(cf, value):
 
 
 def show_configs(args):
+    log.info('show configs')
     cf = get_cf(args)
     contract = get_instance(cf, args)
     # show configs

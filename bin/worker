@@ -17,12 +17,19 @@ import threading
 import queue
 
 from cpc_fusion import Web3
+from logging import handlers
 
 DEFAULT_ENDPOINT = 'https://civilian.cpchain.io'
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler = handlers.RotatingFileHandler('logs/worker.log', maxBytes=10 * 1024 * 1024, backupCount=5)
+handler.setFormatter(formatter)
+
 log = logging.getLogger()
+log.addHandler(handler)
 
 # args parser
 parser = argparse.ArgumentParser()
@@ -209,6 +216,15 @@ def build_parser(subparsers, name, func=None, helps="Help", keystore=False,
     return parser
 
 
+def tmp(args):
+    cf = get_cf(args)
+    instance = get_instance(cf, args)
+    context = dotdict({'fromBlock': 6870782 })
+    events = instance.events['Withdraw']().createFilter(
+            fromBlock=context.fromBlock).get_all_entries()
+    for e in events:
+        log.info(e.args)
+
 subparsers = parser.add_subparsers(help="sub-command help")
 
 # refund
@@ -226,6 +242,10 @@ balance_parser.add_argument('address', type=str)
 run_parser = build_parser(subparsers, 'run', run, 'run',
                               keystore=True, contract_file=True, endpoint=True, contract_address=True)
 run_parser.add_argument('--password', type=str, required=True)
+
+# tmp for test
+tmp_parser = build_parser(subparsers, 'tmp', tmp, 'tmp',
+                              keystore=False, contract_file=True, endpoint=True, contract_address=True)
 
 args = parser.parse_args()
 
