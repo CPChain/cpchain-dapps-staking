@@ -287,8 +287,9 @@ contract Staking is IAdmin, IStaking, IWorker {
             users[msg.sender].balance >= amount,
             "You balance is less than value"
         );
-        users[recipient].balance += amount;
-        users[msg.sender].balance -= amount;
+        require(users[recipient].balance + amount > users[recipient].balance);
+        users[recipient].balance = users[recipient].balance.add(amount);
+        users[msg.sender].balance = users[msg.sender].balance.sub(amount);
         emit Transfer(msg.sender, recipient, amount);
         return true;
     }
