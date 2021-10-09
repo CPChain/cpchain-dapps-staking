@@ -157,7 +157,7 @@ def sumOfQueue(q: deque):
     return sum([i['value'] for i in q])
 
 
-def handle_event(txs: deque, cf, instance, decrypted_key, addr, e, maxValue: float, period: timedelta):
+def handle_event(txs: deque, cf, instance, decrypted_key, addr, e, maxValue: float, period: timedelta, dingding_url: str):
     value = cf.fromWei(e.args['value'], 'ether')
     selected = e.args['selectedWorker']
     to = e.args['account']
@@ -172,7 +172,7 @@ def handle_event(txs: deque, cf, instance, decrypted_key, addr, e, maxValue: flo
             if sum_now >= maxValue:
                 log.info(f"Please wait, because today's amount:{sum_now} CPC greater than the maxValue:{maxValue} CPC")
                 if isFirst:
-                    post_message(f"{addr} exceed the maxValue: {maxValue} CPC, please be carefully!!!")
+                    post_message(dingding_url, f"{addr} exceed the maxValue: {maxValue} CPC, please be carefully!!!")
                     isFirst = False
                 # 清理过期的交易
                 checkExpireTxsQueue(txs, period)
@@ -240,7 +240,7 @@ def run(args):
         tx_err = False
         for e in events:
             try:
-                handle_event(txs, cf, instance, decrypted_key, addr, e, maxValue, period)
+                handle_event(txs, cf, instance, decrypted_key, addr, e, maxValue, period, dingding_url)
             except Exception as e:
                 log.error(e)
                 post_message(dingding_url, str(e))
