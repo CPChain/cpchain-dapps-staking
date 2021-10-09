@@ -141,13 +141,13 @@ def get_balance(args):
     log.info('Interest: %s', interest)
 
 
-def checkExpireTxsQueue(q: deque):
+def checkExpireTxsQueue(q: deque, period: timedelta):
     # 检测队列，如果队列头的时间与现在超过 24 小时，则弹出
     now = dt.now()
     while True:
         if len(q) == 0:
             break
-        if now - q[0]['time'] >= timedelta(days=1):
+        if now - q[0]['time'] >= period:
             q.popleft()
         else:
             break
@@ -157,7 +157,7 @@ def sumOfQueue(q: deque):
     return sum([i['value'] for i in q])
 
 
-def handle_event(txs: deque, cf, instance, decrypted_key, addr, e, maxValue: float):
+def handle_event(txs: deque, cf, instance, decrypted_key, addr, e, maxValue: float, period: timedelta):
     value = cf.fromWei(e.args['value'], 'ether')
     selected = e.args['selectedWorker']
     to = e.args['account']
@@ -175,7 +175,7 @@ def handle_event(txs: deque, cf, instance, decrypted_key, addr, e, maxValue: flo
                     post_message(f"{addr} exceed the maxValue: {maxValue} CPC, please be carefully!!!")
                     isFirst = False
                 # 清理过期的交易
-                checkExpireTxsQueue(txs)
+                checkExpireTxsQueue(txs, period)
                 time.sleep(10)                
             else:
                 break
@@ -200,7 +200,7 @@ def handle_event(txs: deque, cf, instance, decrypted_key, addr, e, maxValue: flo
             log.info('Sorry, refund failed.')
         else:
             txs.append({"time": dt.now(), "value": float(value)})
-            checkExpireTxsQueue(txs)
+            checkExpireTxsQueue(txs, period)
             log.info('Refund success')
 
 def run(args):
@@ -227,6 +227,10 @@ def run(args):
     txs = deque()
 
     maxValue = float(args.max_value)
+    max_period_days = float(args.max_period_days)
+    max_period_seconds = float(args.max_period_seconds)
+
+    period = timedelta(days=max_period_days, seconds=max_period_seconds)
 
     # Listen the withdraw event from the start block
     while True:
@@ -236,7 +240,7 @@ def run(args):
         tx_err = False
         for e in events:
             try:
-                handle_event(txs, cf, instance, decrypted_key, addr, e, maxValue)
+                handle_event(txs, cf, instance, decrypted_key, addr, e, maxValue, period)
             except Exception as e:
                 log.error(e)
                 post_message(dingding_url, str(e))
@@ -302,7 +306,9 @@ balance_parser.add_argument('address', type=str)
 run_parser = build_parser(subparsers, 'run', run, 'run',
                               keystore=True, contract_file=True, endpoint=True, contract_address=True)
 run_parser.add_argument('--password', type=str, required=True)
-run_parser.add_argument('--max-value', type=float, default=500000) # 风控机制，每天最多提现 50 万
+run_parser.add_argument('--max-period-days', type=float, default=1) # 风控机制，窗口期，天为单位
+run_parser.add_argument('--max-period-seconds', type=float, default=0) # 风控机制，窗口期，秒为单位
+run_parser.add_argument('--max-value', type=float, default=500000) # 风控机制，每个窗口期最多提现 50 万
 run_parser.add_argument('--dingding', type=str, required=True) # 钉钉报警
 
 # tmp for test
