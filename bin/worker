@@ -15,6 +15,9 @@ import os
 import time
 import requests
 
+from datetime import datetime as dt
+from datetime import timedelta
+from collections import deque
 from cpc_fusion import Web3
 from logging import handlers
 
@@ -138,7 +141,23 @@ def get_balance(args):
     log.info('Interest: %s', interest)
 
 
-def handle_event(cf, instance, decrypted_key, addr, e):
+def checkExpireTxsQueue(q: deque):
+    # 检测队列，如果队列头的时间与现在超过 24 小时，则弹出
+    now = dt.now()
+    while True:
+        if len(q) == 0:
+            break
+        if now - q[0]['time'] >= timedelta(days=1):
+            q.popleft()
+        else:
+            break
+
+
+def sumOfQueue(q: deque):
+    return sum([i['value'] for i in q])
+
+
+def handle_event(txs: deque, cf, instance, decrypted_key, addr, e, maxValue: float):
     value = cf.fromWei(e.args['value'], 'ether')
     selected = e.args['selectedWorker']
     to = e.args['account']
@@ -146,6 +165,20 @@ def handle_event(cf, instance, decrypted_key, addr, e):
     if selected.lower() == addr.lower():
         log.info(
             f"Selected worker: {selected}, value: {value}, start to refund")
+        # 判断今天是否到了最大值
+        isFirst = True
+        while True:
+            sum_now = sumOfQueue(txs)
+            if sum_now >= maxValue:
+                log.info(f"Please wait, because today's amount:{sum_now} CPC greater than the maxValue:{maxValue} CPC")
+                if isFirst:
+                    post_message(f"{addr} exceed the maxValue: {maxValue} CPC, please be carefully!!!")
+                    isFirst = False
+                # 清理过期的交易
+                checkExpireTxsQueue(txs)
+                time.sleep(10)                
+            else:
+                break
         gas_price = cf.cpc.gasPrice
         nonce = cf.cpc.getTransactionCount(addr)
         tx = instance.functions.refund(to).buildTransaction({
@@ -166,8 +199,9 @@ def handle_event(cf, instance, decrypted_key, addr, e):
             print(receipt)
             log.info('Sorry, refund failed.')
         else:
+            txs.append({"time": dt.now(), "value": float(value)})
+            checkExpireTxsQueue(txs)
             log.info('Refund success')
-
 
 def run(args):
     dingding_url = args.dingding
@@ -190,6 +224,10 @@ def run(args):
     
     context = dotdict(context)
 
+    txs = deque()
+
+    maxValue = float(args.max_value)
+
     # Listen the withdraw event from the start block
     while True:
         log.info("#Block %d", context.fromBlock)
@@ -198,7 +236,7 @@ def run(args):
         tx_err = False
         for e in events:
             try:
-                handle_event(cf, instance, decrypted_key, addr, e)
+                handle_event(txs, cf, instance, decrypted_key, addr, e, maxValue)
             except Exception as e:
                 log.error(e)
                 post_message(dingding_url, str(e))
@@ -264,6 +302,7 @@ balance_parser.add_argument('address', type=str)
 run_parser = build_parser(subparsers, 'run', run, 'run',
                               keystore=True, contract_file=True, endpoint=True, contract_address=True)
 run_parser.add_argument('--password', type=str, required=True)
+run_parser.add_argument('--max-value', type=float, default=500000) # 风控机制，每天最多提现 50 万
 run_parser.add_argument('--dingding', type=str, required=True) # 钉钉报警
 
 # tmp for test
