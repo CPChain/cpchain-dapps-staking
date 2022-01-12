@@ -209,10 +209,13 @@ def run(args):
     instance = get_instance(cf, args)
     ks, addr = load_keystore(cf, args)
 
-    # read password
-    with open(args.password, 'r') as f:
-        password = "".join(f.readlines())
-    password = password.strip()
+    if args.password:
+        # read password
+        with open(args.password, 'r') as f:
+            password = "".join(f.readlines())
+        password = password.strip()
+    else:
+        password = getpass.getpass(f"Please input password of {addr}:")
     decrypted_key = cf.cpc.account.decrypt(ks, password)
 
     # read .worker.json
@@ -234,35 +237,39 @@ def run(args):
 
     # Listen the withdraw event from the start block
     while True:
-        log.info("#Block %d", context.fromBlock)
-        events = instance.events['Withdraw']().createFilter(
-            fromBlock=context.fromBlock).get_all_entries()
-        tx_err = False
-        for e in events:
-            try:
-                handle_event(txs, cf, instance, decrypted_key, addr, e, maxValue, period, dingding_url)
-            except Exception as e:
-                log.error(e)
-                post_message(dingding_url, str(e))
-                if 'replacement transaction underpriced' in str(e):
-                    # 跟 Worker 的挖矿交易重复，等待 10 秒后退出循环
-                    time.sleep(10)
-                    tx_err = True
-                    break
-                else:
-                    return
-            context.fromBlock = e['blockNumber']
-        if tx_err:
-            continue
-        if cf.cpc.blockNumber <= context.fromBlock:
-            current = cf.cpc.blockNumber
-            while current == cf.cpc.blockNumber:
-                time.sleep(0.1)
-            context.fromBlock = cf.cpc.blockNumber
-        else:
-            context.fromBlock += 1
-        with open(FILE_NAME, 'w') as f:
-            f.write(json.dumps(context))
+        try:
+            log.info("#Block %d", context.fromBlock)
+            events = instance.events['Withdraw']().createFilter(
+                fromBlock=context.fromBlock).get_all_entries()
+            tx_err = False
+            for e in events:
+                try:
+                    handle_event(txs, cf, instance, decrypted_key, addr, e, maxValue, period, dingding_url)
+                except Exception as e:
+                    log.error(e)
+                    post_message(dingding_url, str(e))
+                    if 'replacement transaction underpriced' in str(e):
+                        # 跟 Worker 的挖矿交易重复，等待 10 秒后退出循环
+                        time.sleep(10)
+                        tx_err = True
+                        break
+                    else:
+                        return
+                context.fromBlock = e['blockNumber']
+            if tx_err:
+                continue
+            if cf.cpc.blockNumber <= context.fromBlock:
+                current = cf.cpc.blockNumber
+                while current == cf.cpc.blockNumber:
+                    time.sleep(0.1)
+                context.fromBlock = cf.cpc.blockNumber
+            else:
+                context.fromBlock += 1
+            with open(FILE_NAME, 'w') as f:
+                f.write(json.dumps(context))
+        except Exception as e:
+            log.error(e)
+            post_message(dingding_url, str(e))
 
 
 def build_parser(subparsers, name, func=None, helps="Help", keystore=False,
@@ -305,7 +312,7 @@ balance_parser.add_argument('address', type=str)
 # run
 run_parser = build_parser(subparsers, 'run', run, 'run',
                               keystore=True, contract_file=True, endpoint=True, contract_address=True)
-run_parser.add_argument('--password', type=str, required=True)
+run_parser.add_argument('--password', type=str, required=False) # if false, you will should input it
 run_parser.add_argument('--max-period-days', type=float, default=1) # 风控机制，窗口期，天为单位
 run_parser.add_argument('--max-period-seconds', type=float, default=0) # 风控机制，窗口期，秒为单位
 run_parser.add_argument('--max-value', type=float, default=500000) # 风控机制，每个窗口期最多提现 50 万
