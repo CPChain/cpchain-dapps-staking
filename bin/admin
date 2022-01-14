@@ -429,10 +429,13 @@ def run(args):
     instance = get_instance(cf, args)
     ks, addr = load_keystore(cf, args)
 
-    # read password
-    with open(args.password, 'r') as f:
-        password = "".join(f.readlines())
-    password = password.strip()
+    if args.password:
+        # read password
+        with open(args.password, 'r') as f:
+            password = "".join(f.readlines())
+        password = password.strip()
+    else:
+        password = getpass.getpass(f"Please input password of {addr}:")
     decrypted_key = cf.cpc.account.decrypt(ks, password)
 
     # appeal-refund
@@ -606,7 +609,7 @@ stats_interest_parser.add_argument('--password', type=str, required=False)
 # run
 run_parser = build_parser(subparsers, 'run', run, 'refund money automatically',
                           keystore=True, contract_file=True, endpoint=True)
-run_parser.add_argument('--password', type=str, required=True)
+run_parser.add_argument('--password', type=str, required=False)
 
 # change owner
 change_owner_parser = build_parser(subparsers, 'change-owner', change_owner, 'change owner',
